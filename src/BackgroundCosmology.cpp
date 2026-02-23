@@ -34,7 +34,7 @@ BackgroundCosmology::BackgroundCosmology(
 }
 
 //====================================================
-// Do all the solving. Compute eta(x)
+// Do all the solving. Computing eta(x) and t(x), splining.
 //====================================================
 
 // Solve the background
@@ -59,7 +59,6 @@ void BackgroundCosmology::solve(){
     //=============================================================================
     // The rhs of the detadx ODE
     //=============================================================================
-    
 
     detadx[0] = Constants.c/Hp_of_x(x);
 
@@ -82,6 +81,49 @@ void BackgroundCosmology::solve(){
   eta_of_x_spline.create(x_array, eta_array, "Eta of x");         // create spline
 
   Utils::EndTiming("Eta");
+
+
+  // Similar for t(x)
+  Utils::StartTiming("t of x");
+
+  //x_start = -10.0;
+  //x_end   = 0.0;
+  //int npts    = 100;
+  // and
+  //Vector x_array = Utils::linspace(x_start, x_end, npts);
+
+  // The (rhs of) ODE for dt/dx
+  ODEFunction dtdx = [&](double x, const double *t, double *dtdx){
+
+    double H_SI = H_of_x(x) * Constants.km / Constants.Mpc;             // Hubble parameter today in 1/s 
+    dtdx[0] = 1/H_SI;
+
+    return GSL_SUCCESS;
+  };
+
+
+  // Setting initial condition, solving the ODE and making the spline.
+
+  double t_initial = 1/(2*H_of_x(x_start));     // in the r. dom. era, t = 1/2H(x)
+
+  Vector t_ic{t_initial};                   // vector with i.c. for t
+
+  //still using ODESolver ode_solver;
+
+  ode_solver.solve(dtdx, x_array, t_ic,_FIDUCIAL_STEPPER);    // solve. Had to include a stepper since it expected 4 argumetns.
+  
+  Vector t_array = ode_solver.get_data_by_component(0);         // get the 0th component of the sol.
+
+  t_of_x_spline.create(x_array, t_array, "t of x");         // create spline
+
+  std::cout << "---------------------------------\n";
+  std::cout << "Age of universe today:\n";
+  std::cout << "t(x=0) = "
+            << t_of_x(0.0)/(Constants.Gyr)
+            << " Gyr\n";
+  std::cout << "---------------------------------\n";
+
+  Utils::EndTiming("t of x");
 }
 
 //====================================================
@@ -311,6 +353,10 @@ double BackgroundCosmology::eta_of_x(double x) const{
   return eta_of_x_spline(x);
 }
 
+double BackgroundCosmology::t_of_x(double x) const{
+  return t_of_x_spline(x);
+}
+
 double BackgroundCosmology::get_H0() const{ 
   return H0; 
 }
@@ -360,6 +406,7 @@ void BackgroundCosmology::output(const std::string filename) const{
   auto print_data = [&] (const double x) {
     fp << x                  << " ";
     fp << eta_of_x(x)        << " ";
+    fp << t_of_x(x)          << " ";
     fp << Hp_of_x(x)         << " ";
     fp << dHpdx_of_x(x)      << " ";
     fp << get_OmegaB(x)      << " ";

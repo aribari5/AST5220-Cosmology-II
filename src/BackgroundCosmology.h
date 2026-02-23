@@ -30,6 +30,7 @@ class BackgroundCosmology{
 
     // Splines to be made
     Spline eta_of_x_spline{"eta"};
+    Spline t_of_x_spline{"t"};
  
   public:
 
@@ -55,6 +56,7 @@ class BackgroundCosmology{
 
     // Get functions that we must implement
     double eta_of_x(double x) const;
+    double t_of_x(double x) const;
     double H_of_x(double x) const;
     double Hp_of_x(double x) const;
     double dHpdx_of_x(double x) const;
