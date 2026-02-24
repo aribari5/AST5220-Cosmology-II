@@ -82,24 +82,145 @@ def plot_luminosity_distance(filename):
 
     plt.xlabel(r"$z$")
     plt.ylabel(r"$d_L(z)/z$ [Gyr]")
-    plt.title(r"Luminosity Distance")
     plt.legend()
+    plt.xlim(0, 2.5)
+
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_dHpdx_over_Hp(filename):
+    data        = np.loadtxt(filename, skiprows=1)     # Skip the header
+    x           = data[:,0]                            # x = -ln(1+z)
+    dHpdx_over_Hp = data[:,4]/data[:,3]                       # dHpdx / Hp
+
+    plt.figure()
+
+    plt.plot(
+        x,
+        dHpdx_over_Hp,
+        label=r"$\frac{d\mathcal{H}/dx}{\mathcal{H}}$",
+        color='green'
+    )
+    
+    #Vertical lines for matter, radiation and dark energy domination
+
+    plt.axvline(x=-8.0067, color='gray', linestyle='--', alpha=0.7, label="Radiation dominated era stops")    
+    plt.axvline(x=-0.4054, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
+    #plt.axvline(x=-2, color='gray', linestyle=':', alpha=0.7, label="DE dominated era")      
+
+
+
+    plt.xlabel(r"$x$")
+    plt.ylabel(r"$\frac{d\mathcal{H}/dx}{\mathcal{H}}$")
+    plt.legend()
+    #plt.xlim(-2.5, 0)
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_etaHp_over_c(filename):
+    data        = np.loadtxt(filename, skiprows=1)     # Skip the header
+    x           = data[:,0]                            # x = -ln(1+z)
+    etaHp_over_c = data[:,1]*data[:,3]/(3*10**8)                       # eta*Hp / c
+
+    plt.figure()
+
+    plt.plot(
+        x,
+        etaHp_over_c,
+        label=r"$\frac{\eta \mathcal{H}}{c}$",
+        color='purple'
+    )
+
+    plt.xlabel(r"$x$")
+    plt.ylabel(r"$\frac{\eta \mathcal{H}}{c}$")
+    plt.legend()
+    #plt.xlim(-2.5, 0)
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_Hp():
+    data        = load_background_data()
+    x           = data[:,0]                            # x = -ln(1+z)
+    Hp          = data[:,3]                            # Hp
+
+    plt.figure()
+
+    plt.plot(
+        x,
+        Hp,
+        label=r"$\mathcal{H}(x)$",
+        color='black'
+    )
+
+    plt.xlabel(r"$x$")
+    plt.ylabel(r"$\mathcal{H}(x)$")
+    plt.legend()
+    #plt.xlim(-2.5, 0)
+
+    plt.tight_layout()
+    plt.show()
+    
+def plot_densities():
+    data        = load_background_data()
+    x           = data[:,0]                            # x = -ln(1+z)
+    OmegaB      = data[:,5]                            # Baryon density
+    OmegaCDM    = data[:,6]                            # CDM density
+    OmegaLambda = data[:,7]                            # Dark energy density
+    OmegaR      = data[:,8]                            # Radiation density
+    OmegaNu     = data[:,9]                            # Neutrino density
+    OmegaK      = data[:,10]                           # Curvature density
+    Omega_M     = OmegaB + OmegaCDM
+    Omega_Rel   = OmegaR + OmegaNu
+
+
+    plt.figure()
+
+    plt.plot(
+        x,
+        Omega_M,
+        label=r"$\Omega_\mathrm{Matter} = \Omega_b + \Omega_{\mathrm{CDM}}$",
+        color='blue'
+    )
+
+    plt.plot(
+        x,
+        Omega_Rel,
+        label=r"$\Omega_\mathrm{Relativistic} = \Omega_r + \Omega_{\nu}$",
+        color='red'
+    )
+
+    plt.plot(
+        x,
+        OmegaLambda,
+        label=r"$\Omega_\Lambda$",
+        color='green'
+    )
+
+    plt.axvline(x=-8.0067, color='gray', linestyle='--', alpha=0.4, label="Radiation dominated era stops")    
+    plt.axvline(x=-0.4054, color='gray', linestyle='-.', alpha=0.4, label="DE dominated era starts")  
+    plt.axhline(y=1, color='gray', linestyle=':', alpha=0.4, label="Total density")
+
+    plt.xlabel(r"$x$")
+    plt.ylabel(r"Density parameters")
+    plt.legend()
+    #plt.xlim(-2.5, 0)
 
     plt.tight_layout()
     plt.show()
 
 
 
-
-# Setting the style and plotting
+# Setting the style and calling the plots
 if __name__ == "__main__":
     plot_style()
-    plot_luminosity_distance("data/supernovadata.txt")
-
-  
-
-
-
+    # plot_luminosity_distance("data/supernovadata.txt") 
+    # plot_dHpdx_over_Hp("cosmology.txt") 
+    # plot_etaHp_over_c("cosmology.txt") # a bit wrong i think
+    # plot_Hp() #wrong
+    #plot_densities("cosmology.txt")    #wrong
 
 
 

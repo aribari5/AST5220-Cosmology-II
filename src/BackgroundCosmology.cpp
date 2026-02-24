@@ -83,7 +83,7 @@ void BackgroundCosmology::solve(){
   std::cout << "---------------------------------\n";
   std::cout << "Conformal time today:\n";
   std::cout << "eta(x=0) = "
-            << eta_of_x(0.0)/(Constants.c)
+            << eta_of_x(0.0)/(Constants.c)/Constants.Gyr
             << " Gyr\n";
   std::cout << "---------------------------------\n";
 
@@ -157,9 +157,9 @@ double BackgroundCosmology::Hp_of_x(double x) const{
   // The conformal Hubble parameter as a function of x = exp(a). Using Hp = a*H = exp(x)*H
   //=============================================================================
 
-  double Hp = H_of_x(x) * exp(x);
-
-  return Hp;
+  double H_SI = H_of_x(x) * Constants.km / Constants.Mpc;  // in 1/s
+  double Hp_SI = exp(x) * H_SI;  // conformal Hubble in 1/s
+  return Hp_SI;
 }
 
 double BackgroundCosmology::dHpdx_of_x(double x) const{
@@ -301,7 +301,7 @@ double BackgroundCosmology::get_luminosity_distance_of_x(double x) const{
   
   
   double d_L_seconds = get_angular_distance_of_x(x) * exp(-2.0 * x);
-  double d_L = d_L_seconds / Constants.c / Constants.Gyr;           // in Gyr
+  double d_L = d_L_seconds  / Constants.Mpc / 1e3;                    // Gpc
 
   return d_L;
 }
