@@ -2,6 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
 
+# Calculate analytical convergence of dHpdx/Hp and ddHpddx/Hp in the different regimes
+# and the analytical value of x for the radition-matter equality and matter-dark energy equality
+
+
+
 def plot_style():
 
     # Set the style preferences:
@@ -155,7 +160,7 @@ def plot_luminosity_distance(filename):
 
 def plot_dHpdx_over_Hp(filename):
     data        = np.loadtxt(filename, skiprows=1)     # Skip the header
-    x           = data[:,0]                            # x = -ln(1+z)
+    x           = data[:,0]                            
     dHpdx_over_Hp = data[:,4]/data[:,3]                       # dHpdx / Hp
 
     plt.figure()
@@ -182,6 +187,39 @@ def plot_dHpdx_over_Hp(filename):
 
     plt.tight_layout()
     plt.show()
+
+def plot_ddHpddx_over_Hp(filename):
+    data       = np.loadtxt(filename, skiprows=1)
+    x          = data[:,0]
+    ddHpddx_over_Hp = data[:,12]/data[:,3]                       # ddHpddx / Hp
+    plt.figure()
+
+    plt.plot(
+        x,
+        ddHpddx_over_Hp,
+        label=r"$\frac{d^2\mathcal{H}/dx^2}{\mathcal{H}}$",
+        color='green'
+    )
+    
+    #Vertical lines for matter, radiation and dark energy domination
+
+    plt.axvline(x=-8.0067, color='gray', linestyle='--', alpha=0.7, label="Radiation dominated era stops")    
+    plt.axvline(x=-0.4054, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
+    #plt.axvline(x=-2, color='gray', linestyle=':', alpha=0.7, label="DE dominated era")      
+
+
+
+    plt.xlabel(r"$x$")
+    plt.ylabel(r"$\frac{d^2\mathcal{H}/dx^2}{\mathcal{H}}$")
+    plt.legend()
+    #plt.xlim(-2.5, 0)
+
+    plt.tight_layout()
+    plt.show()
+
+
+
+
 
 def plot_etaHp_over_c(filename):
     data        = np.loadtxt(filename, skiprows=1)     # Skip the header
@@ -384,7 +422,7 @@ def plot_mcmc_Omega_Lambda_posterior():
     gaussian_fit = sp.stats.norm.pdf(x, mean_Omega_Lambda, std_Omega_Lambda)*len(Omega_Lambda)*(bin_width)  # Scale the Gaussian to match the histogram
 
 
-    plt.axvline(mean_Omega_Lambda, color='red', linestyle='--', label=f"Mean:")
+    plt.axvline(mean_Omega_Lambda, color='red', linestyle='--', label=f"Mean")
     plt.axvline(mean_Omega_Lambda - std_Omega_Lambda, color='red', linestyle=':', label=r"$\pm1$-$\sigma$")
     plt.axvline(mean_Omega_Lambda + std_Omega_Lambda, color='red', linestyle=':')
     plt.axvline(best_fit_Omega_Lambda, color='black', linestyle='--', label=f"Best fit from Planck")
@@ -397,6 +435,53 @@ def plot_mcmc_Omega_Lambda_posterior():
     plt.show()
 
 
+def plot_mcmc_H0():
+    data        = load_mcmc_results()
+    chi2        = data[0]
+    h           = data[1]
+    Omega_M     = data[2]
+    Omega_K     = data[3]
+
+    # min chi2 and corresponding parameters
+    min_chi2 = np.min(chi2)
+    arg_min_chi2 = np.argmin(chi2)
+
+    best_fit_h = h[arg_min_chi2]
+    best_fit_Omega_M = Omega_M[arg_min_chi2]
+    best_fit_Omega_K = Omega_K[arg_min_chi2]
+
+    best_fit_Omega_Lambda = 1 - best_fit_Omega_M - best_fit_Omega_K
+
+    # Calculate H0 from h
+    H0 = best_fit_h * 100.0
+
+    # Values for Gaussian approximation of the posterior
+    mean_h = np.mean(h)
+    std_h = np.std(h)
+
+    x  = np.linspace(min(h), max(h), 200)
+
+    plt.figure()
+
+    _,bins,_ =  plt.hist(h, bins=45, color='blue', alpha=0.7)
+    bin_width = bins[1] - bins[0]
+
+    gaussian_fit = sp.stats.norm.pdf(x, mean_h, std_h)*len(h)*(bin_width)  # Scale the Gaussian to match the histogram
+
+    plt.axvline(mean_h, color='red', linestyle='--', label=f"Mean={100.0*mean_h:.1f} km/s/Mpc")
+    plt.axvline(mean_h - std_h, color='red', linestyle=':', label=r"$\pm1$-$\sigma$")
+    plt.axvline(mean_h + std_h, color='red', linestyle=':')
+    plt.axvline(best_fit_h, color='black', linestyle='--', label=f"Best fit from Planck={H0:.1f} km/s/Mpc")
+    plt.plot(x, gaussian_fit, color='orange', linestyle='-', label="Gaussian fit to posterior")
+
+    plt.xlabel(r"$h$")
+    plt.ylabel(r"Frequency")
+    plt.tight_layout()
+    plt.legend()
+    plt.show()
+
+
+
 
 
 # Setting the style and calling the plots
@@ -407,10 +492,11 @@ if __name__ == "__main__":
     # plot_t_of_x("cosmology.txt")        # idk what the limits should be
     # plot_luminosity_distance("data/supernovadata.txt") # correct
     # plot_dHpdx_over_Hp("cosmology.txt") # not satisfied, and i should add analytical convergence in diff regimes
+    plot_ddHpddx_over_Hp("cosmology.txt") # not satisfied, and i should add analytical convergence in diff regimes
     # plot_etaHp_over_c("cosmology.txt") # yey
     # plot_Hp() # corect
     # plot_densities()    #yippii
     # plot_mcmc_scatterplot() #niiice
     # plot_mcmc_Omega_Lambda_posterior() #yep
-
+    # plot_mcmc_H0()    #nice
 
