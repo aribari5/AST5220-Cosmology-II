@@ -2,8 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
 
-# Calculate analytical value of x for the radition-matter equality and matter-dark energy equality
-
 
 
 def plot_style():
@@ -44,6 +42,37 @@ def load_background_data():
     data = np.loadtxt(filename)
 
     return data
+
+def calculate_x_radiation_matter_equality():
+    
+    data = load_background_data()
+
+    Omega_r     = data[0,16]
+    Omega_nu    = data[0,17]
+
+    Omega_b     = data[0,13]
+    Omega_CDM   = data[0,14]
+
+    # From analytical calculaton
+    x_rad_mat_eq = np.log((Omega_r + Omega_nu)/(Omega_b + Omega_CDM) )
+
+    return x_rad_mat_eq
+
+
+
+def calculate_x_matter_dark_energy_equality():
+
+    data = load_background_data()
+
+    Omega_b     = data[0,13]
+    Omega_CDM   = data[0,14]
+    Omega_Lambda = data[0,15]
+
+    # From analytical calculaton
+    x_mat_DE_eq = -(1/3)*np.log((Omega_Lambda)/(Omega_b + Omega_CDM) )
+
+    return x_mat_DE_eq
+
 
 
 def load_mcmc_results():
@@ -173,9 +202,12 @@ def plot_dHpdx_over_Hp(filename):
     
     # Vertical lines for matter, radiation and dark energy domination
 
-    plt.axvline(x=-8.0067, color='gray', linestyle='--', alpha=0.7, label="Radiation dominated era stops")    
-    plt.axvline(x=-0.4054, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
-    #plt.axvline(x=-2, color='gray', linestyle=':', alpha=0.7, label="DE dominated era")      
+    x_rad_mat_eq = calculate_x_radiation_matter_equality()
+    x_mat_DE_eq = calculate_x_matter_dark_energy_equality()
+
+    plt.axvline(x_rad_mat_eq, color='gray', linestyle='--', alpha=0.7, label="Radiation dominated era stops")    
+    plt.axvline(x_mat_DE_eq, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
+    
 
     # Horizontal lines for the analytical convergence in the different regimes  
     plt.axhline(y=-1, color='orange', linestyle='--', alpha=0.7, label="Radiation dominated era convergence")
@@ -205,9 +237,12 @@ def plot_ddHpddx_over_Hp(filename):
     
     #Vertical lines for matter, radiation and dark energy domination
 
-    plt.axvline(x=-8.0067, color='gray', linestyle='--', alpha=0.7, label="Radiation dominated era stops")    
-    plt.axvline(x=-0.4054, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
-    #plt.axvline(x=-2, color='gray', linestyle=':', alpha=0.7, label="DE dominated era")      
+    x_rad_mat_eq = calculate_x_radiation_matter_equality()
+    x_mat_DE_eq = calculate_x_matter_dark_energy_equality()
+    
+    plt.axvline(x_rad_mat_eq, color='gray', linestyle='--', alpha=0.7, label="Radiation dominated era stops")    
+    plt.axvline(x_mat_DE_eq, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
+         
 
     # Horizontal lines for the analytical convergence in the different regimes  
     plt.axhline(y=1, color='orange', linestyle='--', alpha=0.7, label="Radiation and DE dominated era convergence")
@@ -320,9 +355,15 @@ def plot_densities():
         linestyle=':'
     )
 
-    # Should calculate these analytically. 
-    plt.axvline(x=-8.0067, color='gray', linestyle='--', alpha=0.4, label="Radiation dominated era stops")    
-    plt.axvline(x=-0.4054, color='gray', linestyle='-.', alpha=0.4, label="DE dominated era starts")  
+    #Vertical lines for matter, radiation and dark energy domination
+
+    x_rad_mat_eq = calculate_x_radiation_matter_equality()
+    x_mat_DE_eq = calculate_x_matter_dark_energy_equality()
+    
+    plt.axvline(x=x_rad_mat_eq, color='gray', linestyle='--', alpha=0.7, label="Radiation dominated era stops")    
+    plt.axvline(x=x_mat_DE_eq, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
+         
+ 
     plt.axhline(y=1, color='gray', linestyle=':', alpha=0.4, label="Total expected density")
 
     plt.xlabel(r"$x=\ln a$")
@@ -494,15 +535,17 @@ def plot_mcmc_H0():
 if __name__ == "__main__":
     plot_style()
 
-    # plot_eta_of_x("cosmology.txt")    # nice
-    # plot_t_of_x("cosmology.txt")        # idk what the limits should be
-    # plot_luminosity_distance("data/supernovadata.txt") # correct
+    plot_eta_of_x("cosmology.txt")    # wtf
+    plot_t_of_x("cosmology.txt")        # idk what the limits should be
+    plot_luminosity_distance("data/supernovadata.txt") # wtf
     # plot_dHpdx_over_Hp("cosmology.txt") # good
-    plot_ddHpddx_over_Hp("cosmology.txt") # yey
+    # plot_ddHpddx_over_Hp("cosmology.txt") # yey
     # plot_etaHp_over_c("cosmology.txt") # yey
-    # plot_Hp() # corect
+    plot_Hp() # wtf
     # plot_densities()    #yippii
-    # plot_mcmc_scatterplot() #niiice
-    # plot_mcmc_Omega_Lambda_posterior() #yep
-    # plot_mcmc_H0()    #nice
+    plot_mcmc_scatterplot() #wtf
+    plot_mcmc_Omega_Lambda_posterior() #wtf
+    plot_mcmc_H0()    #wtf
+
+    # faulty plots most likely due to not returning Hp in SI..
 
