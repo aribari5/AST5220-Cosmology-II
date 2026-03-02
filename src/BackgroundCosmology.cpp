@@ -197,9 +197,9 @@ double BackgroundCosmology::Hp_of_x(double x) const{
   // The conformal Hubble parameter as a function of x = exp(a). Using Hp = a*H = exp(x)*H
   //=============================================================================
 
-  double H_SI = H_of_x(x) * Constants.km / Constants.Mpc;  // in 1/s
-  double Hp_SI = exp(x) * H_SI;  // conformal Hubble in 1/s
-  return Hp_SI;
+  // double H_SI = H_of_x(x) * Constants.km / Constants.Mpc;  // in 1/s
+  double Hp = exp(x) * H_of_x(x);  // conformal Hubble in km/s/Mpc
+  return Hp;
 }
 
 double BackgroundCosmology::dHpdx_of_x(double x) const{
@@ -239,7 +239,7 @@ double BackgroundCosmology::ddHpddx_of_x(double x) const{
 
 
 
-  double ddHpddx = dHpdx + pow(H0,2.0)/2.0 * 
+  double ddHpddx = dHpdx + pow(H0,2.0)/2.0 * ( 
                   (exp(x)*H-exp(x)*dHdx)/pow(H,2.0) *
                   ( -3.0*(OmegaB + OmegaCDM)*exp(-3.0*x) 
                     -4.0*(OmegaR + OmegaNu)*exp(-4.0*x) 
@@ -247,7 +247,7 @@ double BackgroundCosmology::ddHpddx_of_x(double x) const{
                     exp(x)/H * 
                     ( 9.0*(OmegaB + OmegaCDM)*exp(-3.0*x) 
                     +16.0*(OmegaR + OmegaNu)*exp(-4.0*x) 
-                    +4.0*OmegaK*exp(-2.0*x));
+                    +4.0*OmegaK*exp(-2.0*x)) );
   return ddHpddx;
 }
 

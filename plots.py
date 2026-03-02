@@ -2,8 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
 
-# Calculate analytical convergence of dHpdx/Hp and ddHpddx/Hp in the different regimes
-# and the analytical value of x for the radition-matter equality and matter-dark energy equality
+# Calculate analytical value of x for the radition-matter equality and matter-dark energy equality
 
 
 
@@ -172,13 +171,16 @@ def plot_dHpdx_over_Hp(filename):
         color='green'
     )
     
-    #Vertical lines for matter, radiation and dark energy domination
+    # Vertical lines for matter, radiation and dark energy domination
 
     plt.axvline(x=-8.0067, color='gray', linestyle='--', alpha=0.7, label="Radiation dominated era stops")    
     plt.axvline(x=-0.4054, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
     #plt.axvline(x=-2, color='gray', linestyle=':', alpha=0.7, label="DE dominated era")      
 
-
+    # Horizontal lines for the analytical convergence in the different regimes  
+    plt.axhline(y=-1, color='orange', linestyle='--', alpha=0.7, label="Radiation dominated era convergence")
+    plt.axhline(y=-0.5, color='orange', linestyle='-.', alpha=0.7, label="Matter dominated era convergence")
+    plt.axhline(y=1, color='orange', linestyle=':', alpha=0.7, label="DE dominated era convergence")
 
     plt.xlabel(r"$x$")
     plt.ylabel(r"$\frac{d\mathcal{H}/dx}{\mathcal{H}}$")
@@ -207,6 +209,10 @@ def plot_ddHpddx_over_Hp(filename):
     plt.axvline(x=-0.4054, color='gray', linestyle='-.', alpha=0.7, label="DE dominated era starts")   
     #plt.axvline(x=-2, color='gray', linestyle=':', alpha=0.7, label="DE dominated era")      
 
+    # Horizontal lines for the analytical convergence in the different regimes  
+    plt.axhline(y=1, color='orange', linestyle='--', alpha=0.7, label="Radiation and DE dominated era convergence")
+    plt.axhline(y=0.25, color='orange', linestyle='-.', alpha=0.7, label="Matter dominated era convergence")
+    
 
 
     plt.xlabel(r"$x$")
@@ -491,8 +497,8 @@ if __name__ == "__main__":
     # plot_eta_of_x("cosmology.txt")    # nice
     # plot_t_of_x("cosmology.txt")        # idk what the limits should be
     # plot_luminosity_distance("data/supernovadata.txt") # correct
-    # plot_dHpdx_over_Hp("cosmology.txt") # not satisfied, and i should add analytical convergence in diff regimes
-    plot_ddHpddx_over_Hp("cosmology.txt") # not satisfied, and i should add analytical convergence in diff regimes
+    # plot_dHpdx_over_Hp("cosmology.txt") # good
+    plot_ddHpddx_over_Hp("cosmology.txt") # yey
     # plot_etaHp_over_c("cosmology.txt") # yey
     # plot_Hp() # corect
     # plot_densities()    #yippii
