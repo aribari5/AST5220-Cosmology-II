@@ -469,6 +469,10 @@ void BackgroundCosmology::output(const std::string filename) const{
     fp << OmegaLambda                     << " ";       // 15 units: dimensionless
     fp << OmegaR                          << " ";       // 16 units: dimensionless
     fp << OmegaNu                         << " ";       // 17 units: dimensionless
+    fp << OmegaK                          << " ";       // 18 units: dimensionless
+    fp << get_angular_distance_of_x(x)    << " ";       // 19 units: meters
+    fp << get_luminosity_distance_of_x(x) << " ";       // 20 units: meters
+    fp << get_comoving_distance_of_x(x)   << " ";       // 21 units: meters
     fp <<"\n";
   };
   std::for_each(x_array.begin(), x_array.end(), print_data);

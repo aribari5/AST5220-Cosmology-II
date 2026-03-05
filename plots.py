@@ -81,7 +81,8 @@ def caluclate_x_onset_of_acceleration():
     Omega_Lambda = data[0,15]
 
     # From analytical calculaton
-    x_ons_of_acc = (1/3)*np.log((Omega_b+Omega_CDM)/(2*Omega_Lambda))
+    x_ons_of_acc = (-1/3)*np.log((2*Omega_Lambda)/(Omega_b+Omega_CDM))
+    print(f"Onset of acceleration occurs at z = {np.exp(-x_ons_of_acc)-1:.2f}")
 
     return x_ons_of_acc
 
@@ -197,6 +198,8 @@ def plot_luminosity_distance(filename):
 
     plt.tight_layout()
     plt.show()
+    
+
 
 def plot_dHpdx_over_Hp(filename):
     data        = np.loadtxt(filename, skiprows=1)     # Skip the header
@@ -554,17 +557,16 @@ def plot_mcmc_H0():
 if __name__ == "__main__":
     plot_style()
 
-    plot_eta_of_x("cosmology.txt")    # true
-    plot_t_of_x("cosmology.txt")        # idk what the limits should be
-    plot_luminosity_distance("data/supernovadata.txt") 
-    plot_dHpdx_over_Hp("cosmology.txt") 
-    plot_ddHpddx_over_Hp("cosmology.txt")  
-    plot_etaHp_over_c("cosmology.txt") 
-    plot_Hp()  
+    # plot_eta_of_x("cosmology.txt") 
+    # plot_t_of_x("cosmology.txt")
+    # plot_luminosity_distance("data/supernovadata.txt") # ^
+    # plot_dHpdx_over_Hp("cosmology.txt") 
+    # plot_ddHpddx_over_Hp("cosmology.txt")  
+    # plot_etaHp_over_c("cosmology.txt") 
+    # plot_Hp()  
     plot_densities()    #yippii
-    plot_mcmc_scatterplot() #nice
-    plot_mcmc_Omega_Lambda_posterior() #nice
-    plot_mcmc_H0()    #nice
+    # plot_mcmc_scatterplot() #nice
+    # plot_mcmc_Omega_Lambda_posterior() #nice
+    # plot_mcmc_H0()    #nice
 
-    # faulty plots most likely due unit mismatchs in Hp' things in .cpp
 
