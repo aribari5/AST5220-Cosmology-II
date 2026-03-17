@@ -146,6 +146,8 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   //=============================================================================
   
   // Electron fraction and number density
+
+  // Must add  a check feks if 4/C << sim. 300? then use 1.0 early Universe approx.
   double Xe = ( -C + sqrt( pow(C,2) - 4*C) )/2;
   double ne = Xe*n_H;
   
@@ -189,6 +191,8 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   const double TCMB0       = cosmo->get_TCMB(0.0);                                                   // CMB temperature today in K
   const double T_b         = TCMB0/a;
 
+
+  // All of the constants needed for RHS of Peebles
 
   const double n_b          = (1-Yp)*OmegaB0*rho_crit0/(m_H * pow(a,3));
   const double n_H          = (1-Yp)*n_b; 
