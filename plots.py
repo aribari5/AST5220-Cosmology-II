@@ -82,8 +82,8 @@ def caluclate_x_onset_of_acceleration():
 
     # From analytical calculaton
     x_ons_of_acc = (-1/3)*np.log((2*Omega_Lambda)/(Omega_b+Omega_CDM))
-    
-    # print(f"Onset of acceleration occurs at z = {np.exp(-x_ons_of_acc)-1:.2f}")
+
+    # print(f"Onset of acceleration occurs at z = {np.exp(-x_ons_of_acc)-1:.2f}") 
 
     return x_ons_of_acc
 
@@ -187,11 +187,13 @@ def plot_luminosity_distance(filename):
         color='blue',
     )
 
-    plt.plot(
+    plt.semilogx(
         z_model,
         dL_model_Gpc/z_model,
         label="Fiducial model",
         color="red")
+    
+    # best fit model from MCMC (ADD THIS AND SEMILOGX)
 
     plt.xlabel(r"$z$")
     plt.ylabel(r"$d_L(z)/z$ [Gpc]")

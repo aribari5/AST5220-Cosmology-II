@@ -34,10 +34,11 @@ void RecombinationHistory::solve_number_density_electrons(){
   //=============================================================================
   // TODO: Set up x-array and make arrays to store X_e(x) and n_e(x) on
   //=============================================================================
-  Vector x_array;
-  Vector Xe_arr;
-  Vector Xe_saha_arr;
-  Vector ne_arr;
+
+  Vector x_array      = Utils::linspace(x_start, x_end, npts_rec_arrays);
+  Vector Xe_arr       = Utils::linspace(x_start, x_end, npts_rec_arrays);
+  Vector Xe_saha_arr  = Utils::linspace(x_start, x_end, npts_rec_arrays);
+  Vector ne_arr       = Utils::linspace(x_start, x_end, npts_rec_arrays);
 
   // Calculate recombination history
   bool saha_regime = true;
@@ -120,19 +121,34 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double H0_over_h   = Constants.H0_over_h;
 
   // Fetch cosmological parameters
-  //const double OmegaB      = cosmo->get_OmegaB();
-  //...
-  //...
+  const double OmegaB      = cosmo->get_OmegaB();
+  const double OmegaB0     = cosmo->get_OmegaB(0.0);
 
-  // Electron fraction and number density
-  double Xe = 0.0;
-  double ne = 0.0;
+  const double OmegaCDM    = cosmo->get_OmegaCDM();
+  const double OmegaM      = cosmo->get_OmegaM();
+  const double OmegaNu     = cosmo->get_OmegaNu();
+  const double OmegaR      = cosmo->get_OmegaR();
+  const double OmegaLambda = cosmo->get_OmegaLambda();
   
+  const double rho_crit0    = 3.0*pow(H0_over_h,2)*pow(Constants.c,2)/(8.0*Constants.pi*G);       // Critical density today in kg/m^3
+  const double TCMB0       = cosmo->get_TCMB(0.0);                                                   // CMB temperature today in K
+
+
+  const double n_b         = (1-Yp)*OmegaB0*rho_crit0/(m_H * pow(a,3));      // Number density of baryons at x in 1/m^3
+  const double n_H         = (1-Yp)*n_b;                                     // Number density of hydrogen at x in 1/m^3
+  const double T_b         = TCMB0/a;                                        // Temperature of baryons at x in K
+
+
+  const double C           = (1/n_b)*pow( (m_e*T_b)/(2*Constants.pi),3/2 )*exp(-epsilon_0/T_b); // Constant from Saha eq. Should there be a kb in exp?
+
   //=============================================================================
-  // TODO: Compute Xe and ne from the Saha equation
+  // Computing Xe and ne from the Saha equation
   //=============================================================================
-  //...
-  //...
+  
+  // Electron fraction and number density
+  double Xe = ( -C + sqrt( pow(C,2) - 4*C) )/2;
+  double ne = Xe*n_H;
+  
 
   return std::pair<double,double>(Xe, ne);
 }
@@ -158,17 +174,39 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   const double epsilon_0   = Constants.epsilon_0;
 
   // Cosmological parameters
-  // const double OmegaB      = cosmo->get_OmegaB();
-  // ...
-  // ...
+
+  const double OmegaB      = cosmo->get_OmegaB();
+  const double OmegaB0     = cosmo->get_OmegaB(0.0);
+  const double OmegaCDM    = cosmo->get_OmegaCDM();
+  const double OmegaM      = cosmo->get_OmegaM();
+  const double OmegaNu     = cosmo->get_OmegaNu();
+  const double OmegaR      = cosmo->get_OmegaR();
+  const double OmegaLambda = cosmo->get_OmegaLambda();
+  
+  const double H           = cosmo->H_of_x(x);
+  
+  const double rho_crit0   = 3.0*pow(H0_over_h,2)*pow(Constants.c,2)/(8.0*Constants.pi*G);       // Critical density today in kg/m^3
+  const double TCMB0       = cosmo->get_TCMB(0.0);                                                   // CMB temperature today in K
+  const double T_b         = TCMB0/a;
+
+
+  const double n_b          = (1-Yp)*OmegaB0*rho_crit0/(m_H * pow(a,3));
+  const double n_H          = (1-Yp)*n_b; 
+  const double n_1s         = (1-X_e)*n_H;
+  const double lambda_2s1s  = Constants.lambda_2s1s;
+  const double lambda_alpha = H*pow(3*epsilon_0,3)/( pow(8*Constants.pi,2)*n_1s );
+  const double alpha        = 1/137.0359992;
+  const double phi2_of_Tb   = 0.448*log(epsilon_0/T_b);
+  const double alpha2_of_Tb = (64*Constants.pi)/(sqrt(27*Constants.pi)) * pow(alpha/m_e,2) * sqrt(epsilon_0/T_b) * phi2_of_Tb;
+  const double beta_of_Tb   = alpha2_of_Tb*pow(m_e*T_b/(2*Constants.pi),3/2)*exp(-epsilon_0/T_b);
+  const double beta2_of_Tb  = beta_of_Tb*exp((3*epsilon_0)/(4*T_b));
+  const double Cr_of_Tb     = (lambda_2s1s + lambda_alpha)/(lambda_2s1s + lambda_alpha + beta2_of_Tb);
 
   //=============================================================================
-  // TODO: Write the expression for dXedx
+  // RHS of Peebles ODE for dXedx
   //=============================================================================
-  //...
-  //...
   
-  dXedx[0] = 0.0;
+  dXedx[0] =  Cr_of_Tb/H* ( beta_of_Tb*(1-X_e)- n_H*alpha2_of_Tb*pow(X_e,2) );
 
   return GSL_SUCCESS;
 }
