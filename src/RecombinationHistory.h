@@ -51,6 +51,8 @@ class RecombinationHistory{
     // Splines contained in this class
     Spline Xe_of_x_spline{"Xe"};
     Spline Xe_saha_of_x_spline{"Xe_saha"};
+    Spline ne_of_x_spline{"ne"};
+    Spline ne_saha_of_x_spline{"ne_saha"};
     Spline tau_of_x_spline{"tau"}; 
     Spline g_tilde_of_x_spline{"g"};  
 
