@@ -36,13 +36,14 @@ void RecombinationHistory::solve_number_density_electrons(){
   //=============================================================================
 
   Vector x_array      = Utils::linspace(x_start, x_end, npts_rec_arrays);
-  Vector Xe_arr       = Utils::linspace(x_start, x_end, npts_rec_arrays);
-  Vector Xe_saha_arr  = Utils::linspace(x_start, x_end, npts_rec_arrays);
-  Vector ne_arr       = Utils::linspace(x_start, x_end, npts_rec_arrays);
+  Vector Xe_arr(npts_rec_arrays);
+  Vector Xe_saha_arr(npts_rec_arrays);
+  Vector ne_arr(npts_rec_arrays);
 
   const double OmegaB      = cosmo->get_OmegaB();
   const double OmegaB0     = cosmo->get_OmegaB(0.0);
-  const double rho_crit0   = 3.0*pow(cosmo->get_H0(),2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
+  const double H0 = cosmo->get_H0() * Constants.km / Constants.Mpc;  // 1/s
+  const double rho_crit0   = 3.0*pow(H0,2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
   const double m_H = Constants.m_H;
 
   // Calculate recombination history
@@ -63,6 +64,14 @@ void RecombinationHistory::solve_number_density_electrons(){
 
     Xe_saha_arr[i] = Xe_current;
     ne_arr[i] = ne_current;
+
+    // Debugging test
+    std::cout << "---------------------------------\n";
+    std::cout << "x: " << x_array[i] << " Xe_saha: " << Xe_current << " ne_saha: " << ne_current << "\n";
+    isnan(Xe_current) ? std::cout << "Its NaN" << "\n"
+             : std::cout << "Its a real number" << "\n";
+    isnan(ne_current) ? std::cout << "Its NaN" << "\n"
+             : std::cout << "Its a real number" << "\n";
 
     // Are we still in the Saha regime?
     if(Xe_current < Xe_saha_limit)
@@ -158,8 +167,9 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double OmegaR      = cosmo->get_OmegaR();
   const double OmegaLambda = cosmo->get_OmegaLambda();
   
-  const double rho_crit0   = 3.0*pow(cosmo->get_H0(),2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
-  const double TCMB0       = cosmo->get_TCMB(0.0);                                                   // CMB temperature today in K
+  const double H0          = cosmo->get_H0() * Constants.km / Constants.Mpc;     // 1/s
+  const double rho_crit0   = 3.0*pow(H0,2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
+  const double TCMB0       = cosmo->get_TCMB(0.0);                               // CMB temperature today in K
 
 
   const double n_b         = OmegaB0*rho_crit0/(m_H * pow(a,3));             // Number density of baryons at x in 1/m^3
@@ -167,7 +177,7 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double T_b         = TCMB0/a;                                        // Temperature of baryons at x in K
 
 
-  const double C           = (1/n_b)*pow( (m_e*k_b*T_b)/(2*Constants.pi*hbar*hbar),3/2 )*exp(-epsilon_0/(k_b*T_b)); // Constant from Saha eq. Should there be a kb in exp?
+  const double C           = (1/n_b)*pow( (m_e*k_b*T_b)/(2*Constants.pi*hbar*hbar), 3/2 )*exp(-epsilon_0/(k_b*T_b)); 
 
   //=============================================================================
   // Computing Xe and ne from the Saha equation
@@ -177,13 +187,24 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
 
   
 
+  // debugging test
+  std::cout << "---------------------------------\n";
+  std::cout << "x: " << x << " C: " << C << "\n";
+  std::cout << "T_b: " << T_b << "\n";
+  std::cout << "epsilon/(kT): " << epsilon_0/(k_b*T_b) << "\n";
+  std::cout << "n_b: " << n_b << " n_H: " << n_H << "\n";
+  std::cout << "OmegaB: " << OmegaB << " OmegaB0: " << OmegaB0 << "\n";
+  std::cout << "rho_crit0: " << rho_crit0 << "\n";
+  std::cout << "m_H: " << m_H << "\n";
+
+  
 
   double Xe;
-  if (C > 1e7){
+  if (C > 4e2){
     Xe = 1.0;
   }
   else{
-    Xe = ( -C + sqrt( C*C+ 4*C) )/2;
+    Xe = (-C + sqrt(C*C + 4.0*C)) / 2.0;
   }
   double ne = Xe*n_H;
   
@@ -224,17 +245,11 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   const double OmegaLambda = cosmo->get_OmegaLambda();
   
   const double H           = cosmo->H_of_x(x);
-  
-  const double rho_crit0   = 3.0*pow(cosmo->get_H0(),2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
+  const double H0          = cosmo->get_H0() * Constants.km / Constants.Mpc;     // 1/s
+  const double rho_crit0   = 3.0*pow(H0,2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
   const double TCMB0       = cosmo->get_TCMB(0.0);                                                   // CMB temperature today in K
   const double T_b         = TCMB0/a;
 
-  // Course website advice to check if we are fully recombined and if so set derivative to zero to avoid overflow and NaN's.
-  const double ratio = epsilon_0 / (k_b * T_b);
-    if (ratio > 200.0) {
-        dXedx[0] = 0.0;          // fully recombined, implying derivative exactly zero
-        return GSL_SUCCESS;
-    }
 
   // All of the constants needed for RHS of Peebles
 
@@ -252,6 +267,14 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   //=============================================================================
   // RHS of Peebles ODE for dXedx
   //=============================================================================
+
+  // Course website advice to check if we are fully recombined and if so set derivative to zero to avoid overflow and NaN's.
+  const double ratio = epsilon_0 / (k_b * T_b);
+    if (ratio > 70.0) {
+        dXedx[0] = 0.0;          // fully recombined, implying derivative exactly zero
+        return GSL_SUCCESS;
+    }
+
   
   dXedx[0] =  Cr_of_Tb/H* ( beta_of_Tb*(1-X_e)- n_H*alpha2_of_Tb*pow(X_e,2) );
 
@@ -266,12 +289,7 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
 void RecombinationHistory::solve_for_optical_depth_tau(){
   Utils::StartTiming("opticaldepth");
 
-  // Set up x-arrays to integrate over 
-  // Since the IC is at x=0 (tau(0) = 0) the array should go from 0.0 -> x_start 
-  const int npts = 1000;
-  Vector x_array = Utils::linspace(0.0, x_start, npts);
-
-
+  
   // The ODE system dtau/dx, dtau_noreion/dx and dtau_baryon/dx
   ODEFunction dtaudx = [&](double x, const double *tau, double *dtaudx){
 
@@ -279,8 +297,6 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
     // TODO: Write the expression for dtaudx
     //=============================================================================
     
-    
-
     const double ne = ne_of_x(x);
     const double H  = cosmo->H_of_x(x);
 
@@ -293,34 +309,52 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   //=============================================================================
   // TODO: Set up and solve the ODE and make tau splines
   //=============================================================================
+  
+  ODESolver tau_ode_solver;
+
+  // Set up x-arrays to integrate over 
+  // Since the IC is at x=0 (tau(0) = 0) the array should go from 0.0 -> x_start 
+
+  const int npts = 1000;
+  Vector x_array = Utils::linspace(x_end, x_start, npts);
+
   double tau_initial = 0.0;     
   Vector tau_ic{tau_initial};                   // vector with i.c. for tau
 
-  ODESolver tau_ode_solver;
   tau_ode_solver.solve(dtaudx, x_array, tau_ic,gsl_odeiv2_step_rkf45);    
 
-    Vector tau_array = tau_ode_solver.get_data_by_component(0);         // get the 0th component of the sol.
+  auto tau_array = tau_ode_solver.get_data_by_component(0);         // get the 0th component of the sol.
   
-    tau_of_x_spline.create(x_array, tau_array, "tau of x");         // create spline
+  tau_of_x_spline.create(x_array, tau_array, "tau of x");         // create spline
   
-    std::cout << "---------------------------------\n";
-    std::cout << "Optical depth today:\n";
-    std::cout << "tau(x=0) = "
-              << tau_of_x(0.0)
-              << "\n";
-    std::cout << "---------------------------------\n";
-    std::cout << "Optical depth at x=-5:\n";
-    std::cout << "tau(x=-5) = "
-              << tau_of_x(-5.0)
-              << "\n";
-    std::cout << "---------------------------------\n";
-    std::cout << "Optical depth at x=-7:\n";
-    std::cout << "tau(x=-7) = "
-              << tau_of_x(-7.0)
-              << "\n";
-    std::cout << "---------------------------------\n"; 
+  // Debugging test
+  std::cout << "---------------------------------\n";
+  std::cout <<"Debugging test for tau ODE solver:\n";
+  isnan(tau_array[0]) ? (std::cout << "Its NaN\n")
+                      : (std::cout << "Its a real number = " << tau_array[0] << "\n");
 
-  
+  isnan(tau_array[1]) ? (std::cout << "Its NaN\n")
+                      : (std::cout << "Its a real number = " << tau_array[1] << "\n");
+
+
+  std::cout << "---------------------------------\n";
+  std::cout << "Optical depth today:\n";
+  std::cout << "tau(x=0) = "
+            << tau_of_x(0.0)
+            << "\n";
+  std::cout << "---------------------------------\n";
+  std::cout << "Optical depth at x=-5:\n";
+  std::cout << "tau(x=-5) = "
+            << tau_of_x(-5.0)
+            << "\n";
+  std::cout << "---------------------------------\n";
+  std::cout << "Optical depth at x=-7:\n";
+  std::cout << "tau(x=-7) = "
+            << tau_of_x(-7.0)
+            << "\n";
+  std::cout << "---------------------------------\n"; 
+
+
   //=============================================================================
   // Computing the visibility functions and splining everything
   //=============================================================================
