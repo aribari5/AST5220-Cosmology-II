@@ -118,7 +118,7 @@ void BackgroundCosmology::solve(){
   // The (rhs of) ODE for dt/dx
   ODEFunction dtdx = [&](double x, const double *t, double *dtdx){
 
-    dtdx[0] = 1/H0_SI;
+    dtdx[0] = 1/H_of_x(x);
 
     return GSL_SUCCESS;
   };

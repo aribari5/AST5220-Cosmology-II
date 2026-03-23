@@ -42,7 +42,7 @@ void RecombinationHistory::solve_number_density_electrons(){
 
   const double OmegaB      = cosmo->get_OmegaB();
   const double OmegaB0     = cosmo->get_OmegaB(0.0);
-  const double rho_crit0    = 3.0*pow(cosmo->get_H0(),2)*pow(Constants.c,2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
+  const double rho_crit0   = 3.0*pow(cosmo->get_H0(),2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
   const double m_H = Constants.m_H;
 
   // Calculate recombination history
@@ -158,7 +158,7 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double OmegaR      = cosmo->get_OmegaR();
   const double OmegaLambda = cosmo->get_OmegaLambda();
   
-  const double rho_crit0   = 3.0*pow(H0_over_h,2)*pow(Constants.c,2)/(8.0*Constants.pi*G);       // Critical density today in kg/m^3
+  const double rho_crit0   = 3.0*pow(cosmo->get_H0(),2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
   const double TCMB0       = cosmo->get_TCMB(0.0);                                                   // CMB temperature today in K
 
 
@@ -167,7 +167,7 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double T_b         = TCMB0/a;                                        // Temperature of baryons at x in K
 
 
-  const double C           = (1/n_b)*pow( (m_e*T_b)/(2*Constants.pi*hbar*hbar),3/2 )*exp(-epsilon_0/(k_b*T_b)); // Constant from Saha eq. Should there be a kb in exp?
+  const double C           = (1/n_b)*pow( (m_e*k_b*T_b)/(2*Constants.pi*hbar*hbar),3/2 )*exp(-epsilon_0/(k_b*T_b)); // Constant from Saha eq. Should there be a kb in exp?
 
   //=============================================================================
   // Computing Xe and ne from the Saha equation
@@ -175,8 +175,16 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   
   // Electron fraction and number density
 
-  // Must add  a check feks if 4/C << sim. 300? then use 1.0 early Universe approx.
-  double Xe = ( -C + sqrt( C*C+ 4*C) )/2;
+  
+
+
+  double Xe;
+  if (C > 1e7){
+    Xe = 1.0;
+  }
+  else{
+    Xe = ( -C + sqrt( C*C+ 4*C) )/2;
+  }
   double ne = Xe*n_H;
   
 
@@ -217,10 +225,16 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   
   const double H           = cosmo->H_of_x(x);
   
-  const double rho_crit0   = 3.0*pow(H0_over_h,2)*pow(Constants.c,2)/(8.0*Constants.pi*G);       // Critical density today in kg/m^3
+  const double rho_crit0   = 3.0*pow(cosmo->get_H0(),2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
   const double TCMB0       = cosmo->get_TCMB(0.0);                                                   // CMB temperature today in K
   const double T_b         = TCMB0/a;
 
+  // Course website advice to check if we are fully recombined and if so set derivative to zero to avoid overflow and NaN's.
+  const double ratio = epsilon_0 / (k_b * T_b);
+    if (ratio > 200.0) {
+        dXedx[0] = 0.0;          // fully recombined, implying derivative exactly zero
+        return GSL_SUCCESS;
+    }
 
   // All of the constants needed for RHS of Peebles
 
