@@ -54,7 +54,8 @@ class RecombinationHistory{
     Spline ne_of_x_spline{"ne"};
     Spline ne_saha_of_x_spline{"ne_saha"};
     Spline tau_of_x_spline{"tau"}; 
-    Spline g_tilde_of_x_spline{"g"};  
+    Spline g_tilde_of_x_spline{"g"};
+    Spline sound_horizon_of_x_spline{"sound horizon"};  
 
   public:
 

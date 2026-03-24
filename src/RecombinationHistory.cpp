@@ -66,12 +66,12 @@ void RecombinationHistory::solve_number_density_electrons(){
     ne_arr[i] = ne_current;
 
     // Debugging test
-    std::cout << "---------------------------------\n";
-    std::cout << "x: " << x_array[i] << " Xe_saha: " << Xe_current << " ne_saha: " << ne_current << "\n";
-    isnan(Xe_current) ? std::cout << "Its NaN" << "\n"
-             : std::cout << "Its a real number" << "\n";
-    isnan(ne_current) ? std::cout << "Its NaN" << "\n"
-             : std::cout << "Its a real number" << "\n";
+    // std::cout << "---------------------------------\n";
+    // std::cout << "x: " << x_array[i] << " Xe_saha: " << Xe_current << " ne_saha: " << ne_current << "\n";
+    // isnan(Xe_current) ? std::cout << "Its NaN" << "\n"
+    //          : std::cout << "Its a real number" << "\n";
+    // isnan(ne_current) ? std::cout << "Its NaN" << "\n"
+    //          : std::cout << "Its a real number" << "\n";
 
     // Are we still in the Saha regime?
     if(Xe_current < Xe_saha_limit)
@@ -177,37 +177,96 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double T_b         = TCMB0/a;                                        // Temperature of baryons at x in K
 
 
-  const double C           = (1/n_b)*pow( (m_e*k_b*T_b)/(2*Constants.pi*hbar*hbar), 3/2 )*exp(-epsilon_0/(k_b*T_b)); 
+  const double C           = (1/n_b)*pow( (m_e*k_b*T_b)/(2*Constants.pi*hbar*hbar), 1.5 )*exp(-epsilon_0/(k_b*T_b)); 
 
   //=============================================================================
   // Computing Xe and ne from the Saha equation
   //=============================================================================
   
   // Electron fraction and number density
-
-  
-
-  // debugging test
-  std::cout << "---------------------------------\n";
-  std::cout << "x: " << x << " C: " << C << "\n";
-  std::cout << "T_b: " << T_b << "\n";
-  std::cout << "epsilon/(kT): " << epsilon_0/(k_b*T_b) << "\n";
-  std::cout << "n_b: " << n_b << " n_H: " << n_H << "\n";
-  std::cout << "OmegaB: " << OmegaB << " OmegaB0: " << OmegaB0 << "\n";
-  std::cout << "rho_crit0: " << rho_crit0 << "\n";
-  std::cout << "m_H: " << m_H << "\n";
-
   
 
   double Xe;
-  if (C > 4e2){
+  if (C > 400.0){
     Xe = 1.0;
   }
   else{
     Xe = (-C + sqrt(C*C + 4.0*C)) / 2.0;
   }
+
+  // debugging
+  // list of x test values
+  std::vector<double> test_x_values = {-12.0, -10.0, -8.0, -6.0, -4.0, -2.0, 0.0}; 
+  const double epsilon = 0.05; // tolerance for comparing x values
+
+ for (const double test_x : test_x_values) {
+  if ((test_x - epsilon < x) && (x < test_x + epsilon)) {
+    std::cout << "---------------------------------\n";
+    std::cout << "Xe is = " << Xe << " at x = " << x << ":\n";
+    std::cout << "n_H is = " << n_H << " at x = " << x << ":\n";
+    std::cout << "---------------------------------\n";
+  }
+}
+
+
   double ne = Xe*n_H;
   
+  // debugging for loop checking if any values in Xe or ne are NaN
+  // std::cout << "---------------------------------\n";
+  // std::cout << "---------Debugging NaNs----------\n";
+  // std::cout << "---------------------------------\n";
+  // std::cout << "x: " << x << " C: " << C << "\n";
+  // std::cout << "T_b: " << T_b << "\n";
+  // std::cout << "epsilon/(kT): " << epsilon_0/(k_b*T_b) << "\n";
+  // std::cout << "n_b: " << n_b << " n_H: " << n_H << "\n";
+  // std::cout << "OmegaB: " << OmegaB << " OmegaB0: " << OmegaB0 << "\n";
+  // std::cout << "rho_crit0: " << rho_crit0 << "\n";
+  // std::cout << "m_H: " << m_H << "\n";
+
+  // std::cout << "---------------------------------\n";
+  // for (int i = 0; i < 1; i++) {
+  //   if (std::isnan(T_b)) {
+  //     std::cout << "T_b is NaN at x = " << x << "\n";
+  //     break;
+  //   }
+  //   else {
+  //     std::cout << "T_b is a real number " << T_b << " at x = " << x << "\n";
+  //   }
+  // }
+  // std::cout << "---------------------------------\n";
+  // for (int i = 0; i < 1; i++) {
+  //   if (std::isnan(C)) {
+  //     std::cout << "C is NaN at x = " << x << "\n";
+  //     break;
+  //   }
+  //   else {
+  //     std::cout << "C is a real number " << C << " at x = " << x << "\n";
+  //   }
+  // }
+  // std::cout << "---------------------------------\n";
+
+  // for (int i = 0; i < 1; i++) {
+  //   if (std::isnan(Xe)) {
+  //     std::cout << "Xe is NaN at x = " << x << "\n";
+  //     break;
+  //   }
+  //   else {
+  //     std::cout << "Xe is a real number " << Xe << " at x = " << x << "\n";
+  //   }
+  // }
+  // std::cout << "---------------------------------\n";
+
+  // for (int i = 0; i < 1; i++) {
+  //   if (std::isnan(ne)) {
+  //     std::cout << "ne is NaN at x = " << x << "\n";
+  //     break;
+  //   }
+  //   else {
+  //     std::cout << "ne is a real number " << ne << " at x = " << x << "\n";
+  //   }
+
+  // }
+
 
   return std::pair<double,double>(Xe, ne);
 }
@@ -260,7 +319,7 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   const double alpha        = 1/137.0359992;
   const double phi2_of_Tb   = 0.448*log(epsilon_0/((k_b*T_b)));
   const double alpha2_of_Tb = (64*Constants.pi)/(sqrt(27*Constants.pi)) * pow(alpha/m_e,2) * sqrt(epsilon_0/(k_b*T_b)) * phi2_of_Tb;
-  const double beta_of_Tb   = alpha2_of_Tb*pow(m_e*T_b/(2*Constants.pi),3/2)*exp(-epsilon_0/(k_b*T_b));
+  const double beta_of_Tb   = alpha2_of_Tb*pow(m_e*k_b*T_b/(2*Constants.pi*hbar*hbar),1.5)*exp(-epsilon_0/(k_b*T_b));
   const double beta2_of_Tb  = beta_of_Tb*exp((3*epsilon_0)/(4*(k_b*T_b)));
   const double Cr_of_Tb     = (lambda_2s1s + lambda_alpha)/(lambda_2s1s + lambda_alpha + beta2_of_Tb);
 
@@ -297,9 +356,14 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
     // TODO: Write the expression for dtaudx
     //=============================================================================
     
+  
     const double ne = ne_of_x(x);
     const double H  = cosmo->H_of_x(x);
 
+    // debugging
+    // if(H == 0.0 || std::isnan(H)){
+    // std::cout << "H is 0.0 at x = " << x << "\n";
+    // }
 
     dtaudx[0] = -Constants.c*Constants.sigma_T*ne/H;
 
@@ -313,28 +377,28 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   ODESolver tau_ode_solver;
 
   // Set up x-arrays to integrate over 
-  // Since the IC is at x=0 (tau(0) = 0) the array should go from 0.0 -> x_start 
+  // Since the IC is at x=0 (tau(0) = 0) the array should go from x_end -> x_start 
 
-  const int npts = 1000;
+  const int npts = 5000;
   Vector x_array = Utils::linspace(x_end, x_start, npts);
 
   double tau_initial = 0.0;     
   Vector tau_ic{tau_initial};                   // vector with i.c. for tau
 
-  tau_ode_solver.solve(dtaudx, x_array, tau_ic,gsl_odeiv2_step_rkf45);    
+  tau_ode_solver.solve(dtaudx, x_array, tau_ic);//    ,gsl_odeiv2_step_rkf45
 
   auto tau_array = tau_ode_solver.get_data_by_component(0);         // get the 0th component of the sol.
   
   tau_of_x_spline.create(x_array, tau_array, "tau of x");         // create spline
   
   // Debugging test
-  std::cout << "---------------------------------\n";
-  std::cout <<"Debugging test for tau ODE solver:\n";
-  isnan(tau_array[0]) ? (std::cout << "Its NaN\n")
-                      : (std::cout << "Its a real number = " << tau_array[0] << "\n");
+  // std::cout << "---------------------------------\n";
+  // std::cout <<"Debugging test for tau ODE solver:\n";
+  // isnan(tau_array[0]) ? (std::cout << "Its NaN\n")
+  //                     : (std::cout << "Its a real number = " << tau_array[0] << "\n");
 
-  isnan(tau_array[1]) ? (std::cout << "Its NaN\n")
-                      : (std::cout << "Its a real number = " << tau_array[1] << "\n");
+  // isnan(tau_array[1]) ? (std::cout << "Its NaN\n")
+  //                     : (std::cout << "Its a real number = " << tau_array[1] << "\n");
 
 
   std::cout << "---------------------------------\n";
@@ -351,6 +415,11 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   std::cout << "Optical depth at x=-7:\n";
   std::cout << "tau(x=-7) = "
             << tau_of_x(-7.0)
+            << "\n";
+  std::cout << "---------------------------------\n"; 
+  std::cout << "Optical depth at x=-12:\n";
+  std::cout << "tau(x=-12) = "
+            << tau_of_x(-12.0)
             << "\n";
   std::cout << "---------------------------------\n"; 
 
@@ -434,15 +503,15 @@ void RecombinationHistory::output(const std::string filename) const{
 
   Vector x_array = Utils::linspace(x_min, x_max, npts);
   auto print_data = [&] (const double x) {
-    fp << x                    << " ";
-    fp << Xe_of_x(x)           << " ";
-    fp << ne_of_x(x)           << " ";
-    fp << tau_of_x(x)          << " ";
-    fp << dtaudx_of_x(x)       << " ";
-    fp << ddtauddx_of_x(x)     << " ";
-    fp << g_tilde_of_x(x)      << " ";
-    fp << dgdx_tilde_of_x(x)   << " ";
-    fp << ddgddx_tilde_of_x(x) << " ";
+    fp << x                    << " ";  // 1, dimensionless
+    fp << Xe_of_x(x)           << " ";  // 2, dimensionless
+    fp << ne_of_x(x)           << " ";  // 3, 1/m^3
+    fp << tau_of_x(x)          << " ";  // 4, dimensionless
+    fp << dtaudx_of_x(x)       << " ";  // 5, dimensionless
+    fp << ddtauddx_of_x(x)     << " ";  // 6, dimensionless
+    fp << g_tilde_of_x(x)      << " ";  // 7, normalized
+    fp << dgdx_tilde_of_x(x)   << " ";  // 8, normalized
+    fp << ddgddx_tilde_of_x(x) << " ";  // 9, normalized
     fp << "\n";
   };
   std::for_each(x_array.begin(), x_array.end(), print_data);
