@@ -22,6 +22,9 @@ void RecombinationHistory::solve(){
    
   // Compute and spline tau, dtaudx, ddtauddx, g, dgdx, ddgddx, ...
   solve_for_optical_depth_tau();
+
+  // Compute and spline sound horizon
+  solve_for_sound_horizon();
 }
 
 //====================================================
@@ -196,17 +199,17 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
 
   // debugging
   // list of x test values
-  std::vector<double> test_x_values = {-12.0, -10.0, -8.0, -6.0, -4.0, -2.0, 0.0}; 
-  const double epsilon = 0.05; // tolerance for comparing x values
+//   std::vector<double> test_x_values = {-12.0, -10.0, -8.0, -6.0, -4.0, -2.0, 0.0}; 
+//   const double epsilon = 0.05; // tolerance for comparing x values
 
- for (const double test_x : test_x_values) {
-  if ((test_x - epsilon < x) && (x < test_x + epsilon)) {
-    std::cout << "---------------------------------\n";
-    std::cout << "Xe is = " << Xe << " at x = " << x << ":\n";
-    std::cout << "n_H is = " << n_H << " at x = " << x << ":\n";
-    std::cout << "---------------------------------\n";
-  }
-}
+//  for (const double test_x : test_x_values) {
+//   if ((test_x - epsilon < x) && (x < test_x + epsilon)) {
+//     std::cout << "---------------------------------\n";
+//     std::cout << "Xe is = " << Xe << " at x = " << x << ":\n";
+//     std::cout << "n_H is = " << n_H << " at x = " << x << ":\n";
+//     std::cout << "---------------------------------\n";
+//   }
+// }
 
 
   double ne = Xe*n_H;
@@ -361,15 +364,19 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
     const double H  = cosmo->H_of_x(x);
 
     // debugging
-    // if(H == 0.0 || std::isnan(H)){
-    // std::cout << "H is 0.0 at x = " << x << "\n";
-    // }
 
-    dtaudx[0] = -Constants.c*Constants.sigma_T*ne/H;
+    //  std::vector<double> test_x_values = {-12.0, -10.0, -7.0, -5.0, 0.0};
+
+    //   for (const double test_x : test_x_values) {
+    //     const double H = cosmo->H_of_x(test_x); // Compute H for the current test_x
+    //     std::cout << "H is " << H << " at x = " << test_x << "\n";
+    //   }
+
+    dtaudx[0] = -(Constants.c*Constants.sigma_T*ne)/H;
 
     return GSL_SUCCESS;
   };
-
+  
   //=============================================================================
   // TODO: Set up and solve the ODE and make tau splines
   //=============================================================================
@@ -379,16 +386,35 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   // Set up x-arrays to integrate over 
   // Since the IC is at x=0 (tau(0) = 0) the array should go from x_end -> x_start 
 
-  const int npts = 5000;
+  const int npts = 10000;
   Vector x_array = Utils::linspace(x_end, x_start, npts);
 
   double tau_initial = 0.0;     
   Vector tau_ic{tau_initial};                   // vector with i.c. for tau
 
-  tau_ode_solver.solve(dtaudx, x_array, tau_ic);//    ,gsl_odeiv2_step_rkf45
+  // deubging ne
+  // std::cout << "Test ne_of_x at recombination:\n";
+  // std::cout << "ne_of_x(-7.0) = " << ne_of_x(-7.0) << "\n";
+  // std::cout << "ne_of_x(-8.0) = " << ne_of_x(-8.0) << "\n";
+  // std::cout << "H_of_x(-7.0)  = " << cosmo->H_of_x(-7.0) << "\n";
+
+  tau_ode_solver.solve(dtaudx, x_array, tau_ic,gsl_odeiv2_step_rkf45);//    ,gsl_odeiv2_step_rkf45
 
   auto tau_array = tau_ode_solver.get_data_by_component(0);         // get the 0th component of the sol.
-  
+
+  // debugging
+  // std::cout << "=== TAU ODE DEBUG ===\n";
+  // std::cout << "x_array[0]  = " << x_array[0] << " (should be x_end ≈ +5)\n";
+  // std::cout << "x_array.back() = " << x_array.back() << " (should be x_start ≈ -20)\n";
+  // std::cout << "tau[0]      = " << tau_array[0] << "  (IC = 0)\n";
+  // std::cout << "tau[10]     = " << tau_array[10] << "\n";
+  // std::cout << "tau[100]    = " << tau_array[100] << "\n";
+  // std::cout << "tau.back()  = " << tau_array.back() << "  (should be huge, ~10^4–10^5)\n";
+  // std::cout << "=====================\n";
+
+
+
+
   tau_of_x_spline.create(x_array, tau_array, "tau of x");         // create spline
   
   // Debugging test
@@ -442,6 +468,59 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   Utils::EndTiming("opticaldepth");
 }
 
+void RecombinationHistory::solve_for_sound_horizon(){
+  Utils::StartTiming("soundhorizon");
+  ODEFunction dsdx = [&](double x, const double *s, double *dsdx){
+      
+
+      const double Omega_gamma0 = cosmo->get_OmegaR(0.0) - cosmo->get_OmegaNu(0.0);
+      const double Omega_b0     = cosmo->get_OmegaB(0.0);
+
+      const double R            = 4.0*Omega_gamma0*exp(-x) / (3.0*Omega_b0);
+      const double R_initial    = 4.0*Omega_gamma0*exp(-x_start) / (3.0*Omega_b0);
+
+      const double c_s          = Constants.c * sqrt(R/3.0*(1.0+R));
+      const double c_s_initial  = Constants.c * sqrt(R_initial/3.0*(1.0+R_initial)); 
+
+      const double Hp           = cosmo->Hp_of_x(x);
+      const double Hp_initial   = cosmo->Hp_of_x(0.0);
+
+    dsdx[0]= c_s / Hp;
+
+    return GSL_SUCCESS;
+  };
+
+    const double Omega_gamma0 = cosmo->get_OmegaR(0.0) - cosmo->get_OmegaNu(0.0);
+    const double Omega_b0     = cosmo->get_OmegaB(0.0);
+
+    const double R_initial    = 4.0*Omega_gamma0*exp(-x_start) / (3.0*Omega_b0);
+
+    const double c_s_initial  = Constants.c * sqrt(R_initial/3.0*(1.0+R_initial)); 
+
+    const double Hp_initial   = cosmo->Hp_of_x(0.0);
+
+
+  ODESolver sound_horizon_ode_solver;
+
+  const int npts = 10000;
+  Vector x_array = Utils::linspace(x_start, x_end, npts);
+
+  double s_initial = c_s_initial/Hp_initial;
+  Vector s_ic{s_initial};                   // vector with i.c. for s
+
+  sound_horizon_ode_solver.solve(dsdx, x_array, s_ic,gsl_odeiv2_step_rkf45);
+
+  auto s_array = sound_horizon_ode_solver.get_data_by_component(0);
+
+  // creating spline
+
+  sound_horizon_of_x_spline.create(x_array, s_array, "sound horizon of x");
+
+
+  Utils::EndTiming("soundhorizon");
+}
+
+
 //====================================================
 // Get methods
 //====================================================
@@ -478,6 +557,10 @@ double RecombinationHistory::ne_of_x(double x) const{
   return ne_of_x_spline(x);
 }
 
+double RecombinationHistory::sound_horizon_of_x(double x) const{
+  return sound_horizon_of_x_spline(x);
+}
+
 double RecombinationHistory::get_Yp() const{
   return Yp;
 }
@@ -503,15 +586,15 @@ void RecombinationHistory::output(const std::string filename) const{
 
   Vector x_array = Utils::linspace(x_min, x_max, npts);
   auto print_data = [&] (const double x) {
-    fp << x                    << " ";  // 1, dimensionless
-    fp << Xe_of_x(x)           << " ";  // 2, dimensionless
-    fp << ne_of_x(x)           << " ";  // 3, 1/m^3
-    fp << tau_of_x(x)          << " ";  // 4, dimensionless
-    fp << dtaudx_of_x(x)       << " ";  // 5, dimensionless
-    fp << ddtauddx_of_x(x)     << " ";  // 6, dimensionless
-    fp << g_tilde_of_x(x)      << " ";  // 7, normalized
-    fp << dgdx_tilde_of_x(x)   << " ";  // 8, normalized
-    fp << ddgddx_tilde_of_x(x) << " ";  // 9, normalized
+    fp << x                    << " ";  // 0, dimensionless
+    fp << Xe_of_x(x)           << " ";  // 1, dimensionless
+    fp << ne_of_x(x)           << " ";  // 2, 1/m^3
+    fp << tau_of_x(x)          << " ";  // 3, dimensionless
+    fp << dtaudx_of_x(x)       << " ";  // 4, dimensionless
+    fp << ddtauddx_of_x(x)     << " ";  // 5, dimensionless
+    fp << g_tilde_of_x(x)      << " ";  // 6, normalized
+    fp << dgdx_tilde_of_x(x)   << " ";  // 7, normalized
+    fp << ddgddx_tilde_of_x(x) << " ";  // 8, normalized
     fp << "\n";
   };
   std::for_each(x_array.begin(), x_array.end(), print_data);

@@ -42,31 +42,45 @@ def load_recombination_data():
 
     return data
 
-def plot_optical_depth_taus():
-
+def plot_Xe():
     data        = load_recombination_data()
     x           = data[:, 0]
-    tau         = data[:, 4]
-    tau_deriv   = data[:, 5]
-    tau_deriv2  = data[:, 6]
-
+    Xe          = data[:, 1]
 
     plt.figure()
-    plt.plot(x, tau, label=r'$\tau(x)$', color='blue')
-    plt.plot(x, -tau_deriv, label=r"$-\tau'(x)$", color='green')
-    plt.plot(x, tau_deriv2, label=r"$\tau''(x)$", color='red')
+    plt.semilogy(x, Xe, label=r'$X_e(x)$', color='green')
 
-    plt.xlabel(r'Redshift $z$')
-    plt.ylabel(r'Optical Depth $\tau$')
+    plt.xlabel(r'$x=\ln a$')
+    plt.ylabel(r'Ionization Fraction $X_e$')
     plt.legend()
-    plt.ylim(-1e8, 1e8)
+    plt.xlim(-12,0)
+    plt.ylim(-1e4,1e1)
     plt.show()
 
 
 
 
 
+def plot_optical_depth_taus():
 
+    data        = load_recombination_data()
+    x           = data[:, 0]
+    tau         = data[:, 3]
+    tau_deriv   = data[:, 4]
+    tau_deriv2  = data[:, 5]
+
+
+    plt.figure()
+    plt.semilogy(x, tau, label=r'$\tau(x)$', color='blue')
+    plt.semilogy(x, -tau_deriv, label=r"$-\tau'(x)$", color='green')
+    plt.semilogy(x, tau_deriv2, label=r"$\tau''(x)$", color='red')
+
+    plt.xlabel(r'$x=\ln a$')
+    plt.ylabel(r'Optical Depth $\tau$')
+    plt.legend()
+    plt.ylim(-1e8, 1e8)
+    plt.xlim(-12,0)
+    plt.show()
 
 
 ### calling the plots ###
@@ -74,3 +88,4 @@ def plot_optical_depth_taus():
 if __name__ == "__main__":
     plot_style()
     plot_optical_depth_taus()
+    plot_Xe()
