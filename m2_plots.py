@@ -60,7 +60,6 @@ def plot_Xe():
 
 
 
-
 def plot_optical_depth_taus():
 
     data        = load_recombination_data()
@@ -81,6 +80,7 @@ def plot_optical_depth_taus():
     plt.ylim(-1e8, 1e8)
     plt.xlim(-12,0)
     plt.show()
+
 
 
 ### calling the plots ###

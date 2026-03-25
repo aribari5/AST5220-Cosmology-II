@@ -42,6 +42,7 @@ void RecombinationHistory::solve_number_density_electrons(){
   Vector Xe_arr(npts_rec_arrays);
   Vector Xe_saha_arr(npts_rec_arrays);
   Vector ne_arr(npts_rec_arrays);
+  Vector ne_saha_arr(npts_rec_arrays);
 
   const double OmegaB      = cosmo->get_OmegaB();
   const double OmegaB0     = cosmo->get_OmegaB(0.0);
@@ -67,6 +68,7 @@ void RecombinationHistory::solve_number_density_electrons(){
 
     Xe_saha_arr[i] = Xe_current;
     ne_arr[i] = ne_current;
+    ne_saha_arr[i] = ne_current;
 
     // Debugging test
     // std::cout << "---------------------------------\n";
@@ -140,7 +142,7 @@ void RecombinationHistory::solve_number_density_electrons(){
   Xe_saha_of_x_spline.create(x_array, Xe_saha_arr, "Xe Saha of x");
 
   ne_of_x_spline.create(x_array, ne_arr, "ne of x");
-  ne_saha_of_x_spline.create(x_array, ne_arr, "ne Saha of x");
+  ne_saha_of_x_spline.create(x_array, ne_saha_arr, "ne Saha of x");
 
   Utils::EndTiming("Xe");
 }
@@ -363,15 +365,6 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
     const double ne = ne_of_x(x);
     const double H  = cosmo->H_of_x(x);
 
-    // debugging
-
-    //  std::vector<double> test_x_values = {-12.0, -10.0, -7.0, -5.0, 0.0};
-
-    //   for (const double test_x : test_x_values) {
-    //     const double H = cosmo->H_of_x(test_x); // Compute H for the current test_x
-    //     std::cout << "H is " << H << " at x = " << test_x << "\n";
-    //   }
-
     dtaudx[0] = -(Constants.c*Constants.sigma_T*ne)/H;
 
     return GSL_SUCCESS;
@@ -392,63 +385,30 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   double tau_initial = 0.0;     
   Vector tau_ic{tau_initial};                   // vector with i.c. for tau
 
-  // deubging ne
-  // std::cout << "Test ne_of_x at recombination:\n";
-  // std::cout << "ne_of_x(-7.0) = " << ne_of_x(-7.0) << "\n";
-  // std::cout << "ne_of_x(-8.0) = " << ne_of_x(-8.0) << "\n";
-  // std::cout << "H_of_x(-7.0)  = " << cosmo->H_of_x(-7.0) << "\n";
-
   tau_ode_solver.solve(dtaudx, x_array, tau_ic,gsl_odeiv2_step_rkf45);//    ,gsl_odeiv2_step_rkf45
 
   auto tau_array = tau_ode_solver.get_data_by_component(0);         // get the 0th component of the sol.
-
-  // debugging
-  // std::cout << "=== TAU ODE DEBUG ===\n";
-  // std::cout << "x_array[0]  = " << x_array[0] << " (should be x_end ≈ +5)\n";
-  // std::cout << "x_array.back() = " << x_array.back() << " (should be x_start ≈ -20)\n";
-  // std::cout << "tau[0]      = " << tau_array[0] << "  (IC = 0)\n";
-  // std::cout << "tau[10]     = " << tau_array[10] << "\n";
-  // std::cout << "tau[100]    = " << tau_array[100] << "\n";
-  // std::cout << "tau.back()  = " << tau_array.back() << "  (should be huge, ~10^4–10^5)\n";
-  // std::cout << "=====================\n";
 
 
 
 
   tau_of_x_spline.create(x_array, tau_array, "tau of x");         // create spline
   
-  // Debugging test
-  // std::cout << "---------------------------------\n";
-  // std::cout <<"Debugging test for tau ODE solver:\n";
-  // isnan(tau_array[0]) ? (std::cout << "Its NaN\n")
-  //                     : (std::cout << "Its a real number = " << tau_array[0] << "\n");
+ // Similar for SAHA regime only
+ ODESolver tau_saha_ode_solver;
+  Vector x_array_saha = Utils::linspace(x_end, x_start, npts);  // same grid
 
-  // isnan(tau_array[1]) ? (std::cout << "Its NaN\n")
-  //                     : (std::cout << "Its a real number = " << tau_array[1] << "\n");
+  ODEFunction dtaudx_saha = [&](double x, const double *tau, double *dtaudx){
+      const double ne_saha = ne_saha_of_x(x);        // using Saha ne
+      const double H  = cosmo->H_of_x(x);
+      dtaudx[0] = -(Constants.c*Constants.sigma_T*ne_saha) / H;
+      return GSL_SUCCESS;
+  };
 
+  tau_saha_ode_solver.solve(dtaudx_saha, x_array_saha, tau_ic, gsl_odeiv2_step_rkf45); // same IC
+  auto tau_saha_array = tau_saha_ode_solver.get_data_by_component(0);
 
-  std::cout << "---------------------------------\n";
-  std::cout << "Optical depth today:\n";
-  std::cout << "tau(x=0) = "
-            << tau_of_x(0.0)
-            << "\n";
-  std::cout << "---------------------------------\n";
-  std::cout << "Optical depth at x=-5:\n";
-  std::cout << "tau(x=-5) = "
-            << tau_of_x(-5.0)
-            << "\n";
-  std::cout << "---------------------------------\n";
-  std::cout << "Optical depth at x=-7:\n";
-  std::cout << "tau(x=-7) = "
-            << tau_of_x(-7.0)
-            << "\n";
-  std::cout << "---------------------------------\n"; 
-  std::cout << "Optical depth at x=-12:\n";
-  std::cout << "tau(x=-12) = "
-            << tau_of_x(-12.0)
-            << "\n";
-  std::cout << "---------------------------------\n"; 
-
+  tau_of_x_spline_saha.create(x_array_saha, tau_saha_array, "tau saha");
 
   //=============================================================================
   // Computing the visibility functions and splining everything
@@ -477,13 +437,9 @@ void RecombinationHistory::solve_for_sound_horizon(){
       const double Omega_b0     = cosmo->get_OmegaB(0.0);
 
       const double R            = 4.0*Omega_gamma0*exp(-x) / (3.0*Omega_b0);
-      const double R_initial    = 4.0*Omega_gamma0*exp(-x_start) / (3.0*Omega_b0);
-
-      const double c_s          = Constants.c * sqrt(R/3.0*(1.0+R));
-      const double c_s_initial  = Constants.c * sqrt(R_initial/3.0*(1.0+R_initial)); 
+      const double c_s          = Constants.c * sqrt(R/(3.0*(1.0+R)));
 
       const double Hp           = cosmo->Hp_of_x(x);
-      const double Hp_initial   = cosmo->Hp_of_x(0.0);
 
     dsdx[0]= c_s / Hp;
 
@@ -495,9 +451,9 @@ void RecombinationHistory::solve_for_sound_horizon(){
 
     const double R_initial    = 4.0*Omega_gamma0*exp(-x_start) / (3.0*Omega_b0);
 
-    const double c_s_initial  = Constants.c * sqrt(R_initial/3.0*(1.0+R_initial)); 
+    const double c_s_initial  = Constants.c * sqrt(R_initial/(3.0*(1.0+R_initial))); 
 
-    const double Hp_initial   = cosmo->Hp_of_x(0.0);
+    const double Hp_initial   = cosmo->Hp_of_x(x_start);
 
 
   ODESolver sound_horizon_ode_solver;
@@ -529,6 +485,10 @@ double RecombinationHistory::tau_of_x(double x) const{
   return tau_of_x_spline(x);
 }
 
+double RecombinationHistory::tau_of_x_saha(double x) const{
+  return tau_of_x_spline_saha(x);
+}
+
 double RecombinationHistory::dtaudx_of_x(double x) const{
   return tau_of_x_spline.deriv_x(x);
 }
@@ -557,6 +517,10 @@ double RecombinationHistory::ne_of_x(double x) const{
   return ne_of_x_spline(x);
 }
 
+double RecombinationHistory::ne_saha_of_x(double x) const{
+    return ne_saha_of_x_spline(x);
+}
+
 double RecombinationHistory::sound_horizon_of_x(double x) const{
   return sound_horizon_of_x_spline(x);
 }
@@ -569,10 +533,90 @@ double RecombinationHistory::get_Yp() const{
 // Print some useful info about the class
 //====================================================
 void RecombinationHistory::info() const{
-  std::cout << "\n";
+  std::cout <<"====================================================\n";
   std::cout << "Info about recombination/reionization history class:\n";
+  std::cout <<"====================================================\n";
+
+  std::cout << "---------------------------------\n"; 
   std::cout << "Yp:          " << Yp          << "\n";
+
+  // std::cout << "---------------------------------\n";
+  // std::cout << "Optical depth today:\n";
+  // std::cout << "tau(x=0) = "
+  //           << tau_of_x(0.0)
+  //           << "\n";
+  // std::cout << "---------------------------------\n";
+  // std::cout << "Optical depth at x=-5:\n";
+  // std::cout << "tau(x=-5) = "
+  //           << tau_of_x(-5.0)
+  //           << "\n";
+  // std::cout << "---------------------------------\n";
+  // std::cout << "Optical depth at x=-7:\n";
+  // std::cout << "tau(x=-7) = "
+  //           << tau_of_x(-7.0)
+  //           << "\n";
+  // std::cout << "---------------------------------\n"; 
+  // std::cout << "Optical depth at x=-12:\n";
+  // std::cout << "tau(x=-12) = "
+  //           << tau_of_x(-12.0)
+  //           << "\n";
+  // std::cout << "---------------------------------\n"; 
+
+
+  // Computing tau at x_decoupling, where tau = 1.0
+  // Evaluating X_e at decoupling, and finding x where X_e = 0.5:
+
+  const double tau_at_decoupling = 1.0;
+
+  double x_decoupling             = Utils::binary_search_for_value(tau_of_x_spline, tau_at_decoupling);
+
+  double Xe_decoupling            = Xe_of_x(x_decoupling);             
+  double x_Xe_half                = Utils::binary_search_for_value(Xe_of_x_spline, 0.5, {-8.0, -6.0});
+  double t_decoupling             = cosmo->t_of_x(x_decoupling) / Constants.Gyr; 
+
+  // Computing tau at x_decoupling, where tau = 1.0
+  // Evaluating X_e at decoupling, and finding x where X_e = 0.5:
+  // SAHA approx
+  double x_decoupling_saha        = Utils::binary_search_for_value(tau_of_x_spline_saha, tau_at_decoupling);
+
+  double Xe_decoupling_saha       = Xe_of_x(x_decoupling_saha);             
+  double x_Xe_half_saha           = Utils::binary_search_for_value(Xe_saha_of_x_spline, 0.5, {-8.0, -6.0});
+  double t_decoupling_saha        = cosmo->t_of_x(x_decoupling_saha) / Constants.Gyr; 
+
+
+  std::cout << "x_decoupling                         = " << x_decoupling << "\n";
+  std::cout << "Redshift of decoupling: z_decoupling = " << exp(-x_decoupling) - 1.0 << "\n";
+  std::cout << "Time of decoupling: t_decoupling     = " << t_decoupling << " Gyr\n";
+
+  std::cout << "---------------------------------\n";
+  std::cout << "x_decoupling (Saha)                         = " << x_decoupling_saha << "\n";
+  std::cout << "Redshift of decoupling (Saha): z_decoupling = " << exp(-x_decoupling_saha) - 1.0 << "\n";
+  std::cout << "Time of decoupling (Saha): t_decoupling     = " << t_decoupling_saha << " Gyr\n";
+
+  std::cout << "---------------------------------\n";
+
+
+  std::cout << "X_e at decoupling: Xe(x_decoupling)             = " << Xe_decoupling << "\n";
+  std::cout << "X_e at decoupling (Saha): Xe(x_decoupling_saha) = " << Xe_decoupling_saha << "\n";
+
+  std::cout << "---------------------------------\n";
+
+  std::cout << "x where X_e = 0.5: x_Xe_half                          = " << x_Xe_half << "\n";
+  std::cout << "Redshift where X_e = 0.5: z_Xe_half                   = " << exp(-x_Xe_half) - 1.0 << "\n";
+
+  std::cout << "x where X_e = 0.5 (Saha): x_Xe_half_saha              = " << x_Xe_half_saha << "\n";
+  std::cout << "Redshift where X_e = 0.5 (Saha): z_Xe_half_saha       = " << exp(-x_Xe_half_saha) - 1.0 << "\n";
+
+
+  std::cout << "---------------------------------\n";
+  std::cout << "Sound horizon at last scattering (x = -7): "
+          << sound_horizon_of_x(-7.0) / Constants.Mpc << " Mpc\n";
   std::cout << std::endl;
+
+
+
+
+
 } 
 
 //====================================================
@@ -595,6 +639,7 @@ void RecombinationHistory::output(const std::string filename) const{
     fp << g_tilde_of_x(x)      << " ";  // 6, normalized
     fp << dgdx_tilde_of_x(x)   << " ";  // 7, normalized
     fp << ddgddx_tilde_of_x(x) << " ";  // 8, normalized
+    fp << sound_horizon_of_x(x) << " ";  // 9, m
     fp << "\n";
   };
   std::for_each(x_array.begin(), x_array.end(), print_data);

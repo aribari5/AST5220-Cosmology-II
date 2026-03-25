@@ -48,12 +48,19 @@ class RecombinationHistory{
     // The two things we need to solve: Xe/ne and tau
     void solve_for_optical_depth_tau();
 
+    //===============================================================
+    // [3] Compute sound horizon
+    //===============================================================
+    void solve_for_sound_horizon();
+
+
     // Splines contained in this class
     Spline Xe_of_x_spline{"Xe"};
     Spline Xe_saha_of_x_spline{"Xe_saha"};
     Spline ne_of_x_spline{"ne"};
     Spline ne_saha_of_x_spline{"ne_saha"};
-    Spline tau_of_x_spline{"tau"}; 
+    Spline tau_of_x_spline{"tau"};
+    Spline tau_of_x_spline_saha{"tau_saha"}; 
     Spline g_tilde_of_x_spline{"g"};
     Spline sound_horizon_of_x_spline{"sound horizon"};  
 
@@ -76,6 +83,7 @@ class RecombinationHistory{
 
     // Get functions that we must implement
     double tau_of_x(double x) const;
+    double tau_of_x_saha(double x) const;
     double dtaudx_of_x(double x) const;
     double ddtauddx_of_x(double x) const;
     double g_tilde_of_x(double x) const;
@@ -83,6 +91,8 @@ class RecombinationHistory{
     double ddgddx_tilde_of_x(double x) const;
     double Xe_of_x(double x) const;
     double ne_of_x(double x) const;
+    double ne_saha_of_x(double x) const;
+    double sound_horizon_of_x(double x) const;
     double get_Yp() const;
 };
 
