@@ -607,11 +607,21 @@ void RecombinationHistory::info() const{
   std::cout << "x where X_e = 0.5 (Saha): x_Xe_half_saha              = " << x_Xe_half_saha << "\n";
   std::cout << "Redshift where X_e = 0.5 (Saha): z_Xe_half_saha       = " << exp(-x_Xe_half_saha) - 1.0 << "\n";
 
+  std::cout << "Freeze-out abundance of free electrons today"
+            << ": Xe(x=0) = " << Xe_of_x(0.0) << "\n";
+
 
   std::cout << "---------------------------------\n";
-  std::cout << "Sound horizon at last scattering (x = -7): "
-          << sound_horizon_of_x(-7.0) / Constants.Mpc << " Mpc\n";
-  std::cout << std::endl;
+  std::cout << "Sound horizon at last scattering (x = x_decoupling):              =" << sound_horizon_of_x(x_decoupling) / Constants.Mpc << " Mpc\n";
+
+  std::cout << "Sound horizon at last scattering (Saha) (x = x_decoupling_saha)   =" << sound_horizon_of_x(x_decoupling_saha) / Constants.Mpc << " Mpc\n";
+
+  std::cout << "Sound horizon at recombination (x = x_Xe_half)                    ="<< sound_horizon_of_x(x_Xe_half) / Constants.Mpc << " Mpc\n";
+
+  std::cout << "Sound horizon at recombination (Saha) (x = x_Xe_half_saha)        ="<< sound_horizon_of_x(x_Xe_half_saha) / Constants.Mpc << " Mpc\n";
+
+    
+
 
 
 

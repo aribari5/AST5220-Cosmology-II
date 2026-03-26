@@ -82,10 +82,58 @@ def plot_optical_depth_taus():
     plt.show()
 
 
+def plot_visibility_functions():
 
+    data            = load_recombination_data()
+    x               = data[:, 0]
+    g_tilde         = data[:, 6]
+    g_tilde_deriv   = data[:, 7]
+    g_tilde_deriv2  = data[:, 8]
+
+    # scaling them appropriately such that they fit in the same plot
+    # checking which one has the largest absolute value
+    max_g_tilde         = np.max(np.abs(g_tilde))
+    max_g_tilde_deriv   = np.max(np.abs(g_tilde_deriv))
+    max_g_tilde_deriv2  = np.max(np.abs(g_tilde_deriv2))
+
+    if max_g_tilde_deriv > max_g_tilde:
+
+        g_tilde          = g_tilde * (max_g_tilde_deriv / max_g_tilde)
+        g_tilde_deriv2   = g_tilde_deriv2 * (max_g_tilde_deriv / max_g_tilde_deriv2)
+
+    elif max_g_tilde_deriv2 > max_g_tilde:
+
+        g_tilde          = g_tilde * (max_g_tilde_deriv2 / max_g_tilde)
+        g_tilde_deriv    = g_tilde_deriv * (max_g_tilde_deriv2 / max_g_tilde_deriv)
+
+    elif max_g_tilde_deriv2 > max_g_tilde_deriv:
+
+        g_tilde_deriv    = g_tilde_deriv * (max_g_tilde_deriv2 / max_g_tilde_deriv)
+        g_tilde          = g_tilde * (max_g_tilde_deriv2 / max_g_tilde)
+
+        
+    
+    
+
+
+
+    plt.figure()
+    plt.plot(x, g_tilde, label=r'$\tilde{g}(x)$', color='blue')
+    plt.plot(x, g_tilde_deriv, label=r"$\tilde{g}'(x)$", ls='--' ,color='green')
+    plt.plot(x, g_tilde_deriv2, label=r"$\tilde{g}''(x)$",ls='-.' ,color='red')
+    plt.xlabel(r'$x=\ln a$')
+    plt.ylabel(r'$\tilde{g}$' + ' and its derivatives (all scaled)')
+    plt.legend()
+    # plt.xlim(-12,0)
+    plt.xlim(-7.25,-6)
+    plt.show()
+
+
+    
 ### calling the plots ###
 
 if __name__ == "__main__":
     plot_style()
     plot_optical_depth_taus()
     plot_Xe()
+    plot_visibility_functions()
