@@ -192,7 +192,7 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   
 
   double Xe;
-  if (C > 400.0){
+  if (C > 4000.0){
     Xe = 1.0;
   }
   else{
@@ -320,24 +320,26 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   const double n_b          = OmegaB0*rho_crit0/(m_H * pow(a,3));
   const double n_H          = (1-Yp)*n_b; 
   const double n_1s         = (1-X_e)*n_H;
-  const double lambda_alpha = H*pow(3*epsilon_0,3)/( pow(8*Constants.pi,2)*n_1s );
+  const double lambda_alpha = H*pow(3*epsilon_0/(Constants.c*hbar),3)/( pow(8*Constants.pi,2)*n_1s );
   const double alpha        = 1/137.0359992;
   const double phi2_of_Tb   = 0.448*log(epsilon_0/((k_b*T_b)));
-  const double alpha2_of_Tb = (64*Constants.pi)/(sqrt(27*Constants.pi)) * pow(alpha/m_e,2) * sqrt(epsilon_0/(k_b*T_b)) * phi2_of_Tb;
+
+  // const double alpha2_of_Tb = (64*Constants.pi)/(sqrt(27*Constants.pi)) * pow(alpha/m_e,2) * sqrt(epsilon_0/(k_b*T_b)) * phi2_of_Tb;
+  const double alpha2_of_Tb = 8.0/sqrt(3.0*Constants.pi)*Constants.c*Constants.sigma_T*sqrt(epsilon_0/(k_b*T_b))*phi2_of_Tb;
   const double beta_of_Tb   = alpha2_of_Tb*pow(m_e*k_b*T_b/(2*Constants.pi*hbar*hbar),1.5)*exp(-epsilon_0/(k_b*T_b));
-  const double beta2_of_Tb  = beta_of_Tb*exp((3*epsilon_0)/(4*(k_b*T_b)));
+  const double beta2_of_Tb  = alpha2_of_Tb*pow(m_e*k_b*T_b/(2*Constants.pi*hbar*hbar),1.5)*exp(-(epsilon_0)/(4*(k_b*T_b)));
   const double Cr_of_Tb     = (lambda_2s1s + lambda_alpha)/(lambda_2s1s + lambda_alpha + beta2_of_Tb);
 
   //=============================================================================
   // RHS of Peebles ODE for dXedx
   //=============================================================================
 
-  // Course website advice to check if we are fully recombined and if so set derivative to zero to avoid overflow and NaN's.
-  const double ratio = epsilon_0 / (k_b * T_b);
-    if (ratio > 70.0) {
-        dXedx[0] = 0.0;          // fully recombined, implying derivative exactly zero
-        return GSL_SUCCESS;
-    }
+  // // Course website advice to check if we are fully recombined and if so set derivative to zero to avoid overflow and NaN's.
+  // const double ratio = epsilon_0 / (k_b * T_b);
+  //   if (ratio > 70.0) {
+  //       dXedx[0] = 0.0;          // fully recombined, implying derivative exactly zero
+  //       return GSL_SUCCESS;
+  //   }
 
   
   dXedx[0] =  Cr_of_Tb/H* ( beta_of_Tb*(1-X_e)- n_H*alpha2_of_Tb*pow(X_e,2) );
@@ -433,7 +435,7 @@ void RecombinationHistory::solve_for_sound_horizon(){
   ODEFunction dsdx = [&](double x, const double *s, double *dsdx){
       
 
-      const double Omega_gamma0 = cosmo->get_OmegaR(0.0) - cosmo->get_OmegaNu(0.0);
+      const double Omega_gamma0 = cosmo->get_OmegaR(0.0);
       const double Omega_b0     = cosmo->get_OmegaB(0.0);
 
       const double R            = 4.0*Omega_gamma0*exp(-x) / (3.0*Omega_b0);
@@ -446,7 +448,7 @@ void RecombinationHistory::solve_for_sound_horizon(){
     return GSL_SUCCESS;
   };
 
-    const double Omega_gamma0 = cosmo->get_OmegaR(0.0) - cosmo->get_OmegaNu(0.0);
+    const double Omega_gamma0 = cosmo->get_OmegaR(0.0);
     const double Omega_b0     = cosmo->get_OmegaB(0.0);
 
     const double R_initial    = 4.0*Omega_gamma0*exp(-x_start) / (3.0*Omega_b0);

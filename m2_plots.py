@@ -98,34 +98,64 @@ def plot_visibility_functions():
 
     if max_g_tilde_deriv > max_g_tilde:
 
-        g_tilde          = g_tilde * (max_g_tilde_deriv / max_g_tilde)
-        g_tilde_deriv2   = g_tilde_deriv2 * (max_g_tilde_deriv / max_g_tilde_deriv2)
+        g_tilde_deriv_scaled    = g_tilde_deriv
+        g_tilde_scaled          = g_tilde * (max_g_tilde_deriv / max_g_tilde)
+        g_tilde_deriv2_scaled   = g_tilde_deriv2 * (max_g_tilde_deriv / max_g_tilde_deriv2)
 
     elif max_g_tilde_deriv2 > max_g_tilde:
 
-        g_tilde          = g_tilde * (max_g_tilde_deriv2 / max_g_tilde)
-        g_tilde_deriv    = g_tilde_deriv * (max_g_tilde_deriv2 / max_g_tilde_deriv)
+        g_tilde_deriv2_scaled   = g_tilde_deriv2
+        g_tilde_scaled          = g_tilde * (max_g_tilde_deriv2 / max_g_tilde)
+        g_tilde_deriv_scaled    = g_tilde_deriv * (max_g_tilde_deriv2 / max_g_tilde_deriv)
 
     elif max_g_tilde_deriv2 > max_g_tilde_deriv:
 
-        g_tilde_deriv    = g_tilde_deriv * (max_g_tilde_deriv2 / max_g_tilde_deriv)
-        g_tilde          = g_tilde * (max_g_tilde_deriv2 / max_g_tilde)
+        g_tilde_deriv2_scaled   = g_tilde_deriv2
+        g_tilde_deriv_scaled    = g_tilde_deriv * (max_g_tilde_deriv2 / max_g_tilde_deriv)
+        g_tilde_scaled          = g_tilde * (max_g_tilde_deriv2 / max_g_tilde)
 
         
     
     
 
+    fig, ax = plt.subplots(2,2)
 
-
+    
     plt.figure()
-    plt.plot(x, g_tilde, label=r'$\tilde{g}(x)$', color='blue')
-    plt.plot(x, g_tilde_deriv, label=r"$\tilde{g}'(x)$", ls='--' ,color='green')
-    plt.plot(x, g_tilde_deriv2, label=r"$\tilde{g}''(x)$",ls='-.' ,color='red')
-    plt.xlabel(r'$x=\ln a$')
-    plt.ylabel(r'$\tilde{g}$' + ' and its derivatives (all scaled)')
-    plt.legend()
-    # plt.xlim(-12,0)
-    plt.xlim(-7.25,-6)
+    ax[0,0].plot(x, g_tilde, label=r'$\tilde{g}(x)$', color='blue')
+    # ax[0,0].set_xlabel(r'$x=\ln a$')
+    ax[0,0].set_ylabel(r'$\tilde{g}(x)$')
+    ax[0,0].set_xlim(-12,0)
+    ax[0,0].legend()
+
+    ax[0,1].plot(x, g_tilde_deriv, label=r"$\tilde{g}'(x)$", color='green')
+    # ax[0,1].set_xlabel(r'$x=\ln a$')
+    ax[0,1].set_ylabel(r"$\tilde{g}'(x)$")
+    ax[0,1].set_xlim(-12,0)
+    ax[0,1].legend()
+
+    ax[1,0].plot(x, g_tilde_deriv2, label=r"$\tilde{g}''(x)$", color='red')
+    ax[1,0].set_xlabel(r'$x=\ln a$')
+    ax[1,0].set_ylabel(r"$\tilde{g}''(x)$")
+    ax[1,0].set_xlim(-12,0)
+    ax[1,0].legend()
+
+    ax[1,1].plot(x, g_tilde_scaled, label=r'$\tilde{g}(x)$', color='blue')
+    ax[1,1].plot(x, g_tilde_deriv_scaled, label=r"$\tilde{g}'(x)$", ls='--' ,color='green')
+    ax[1,1].plot(x, g_tilde_deriv2_scaled, label=r"$\tilde{g}''(x)$",ls='-.' ,color='red')
+    ax[1,1].set_xlabel(r'$x=\ln a$')
+    ax[1,1].set_ylabel(r'$\tilde{g}$' + ' and its derivatives (all scaled)')
+    ax[1,1].set_xlim(-8,-6)
+    ax[1,1].legend()
+
+    # plt.plot(x, g_tilde, label=r'$\tilde{g}(x)$', color='blue')
+    # plt.plot(x, g_tilde_deriv, label=r"$\tilde{g}'(x)$", ls='--' ,color='green')
+    # plt.plot(x, g_tilde_deriv2, label=r"$\tilde{g}''(x)$",ls='-.' ,color='red')
+    # plt.xlabel(r'$x=\ln a$')
+    # plt.ylabel(r'$\tilde{g}$' + ' and its derivatives (all scaled)')
+    # plt.legend()
+    # # plt.xlim(-12,0)
+    # plt.xlim(-7.25,-6)
     plt.show()
 
 
