@@ -120,7 +120,7 @@ def plot_eta_of_x(filename):
         color='blue',
     )
     
-    plt.xlabel(r"$x$")
+    plt.xlabel(r"$x=\ln a$")
     plt.ylabel(r"$\eta(x)$ [Mpc]")
     plt.legend()
     plt.xlim(-12, 0)
@@ -144,7 +144,7 @@ def plot_t_of_x(filename):
         color='green',
     )
 
-    plt.xlabel(r"$x$")
+    plt.xlabel(r"$x=\ln a$")
     plt.ylabel(r"$t(x)$ [Gyr]")
     plt.legend()
     # plt.xlim(0, 0)
@@ -163,11 +163,31 @@ def plot_luminosity_distance(filename):
     d_L         = data[:,1]                            # in Gpc
     errorbars   = data[:,2]                            # in Gpc
 
-    cosmo_data = load_background_data()
+    cosmo_data  = load_background_data()
+
     x           = cosmo_data[:,0]
     z_model     = np.exp(-x) - 1
-    dL_model_SI    = cosmo_data[:,11]   # in m!
-    dL_model_Gpc = dL_model_SI / (1e9*sp.constants.parsec)  #Gpc
+    dL_model_SI = cosmo_data[:,11]   # in m!
+    dL_model_Gpc= dL_model_SI / (1e9*sp.constants.parsec)  #Gpc
+
+    # Best fit model from MCMC
+    mcmc_data = load_mcmc_results()
+
+    chi2        = mcmc_data[0]
+    h           = mcmc_data[1]
+    Omega_M     = mcmc_data[2]
+    Omega_K     = mcmc_data[3]
+
+    best_fit_index = np.argmin(chi2)
+    best_fit_h = h[best_fit_index]
+    best_fit_Omega_M = Omega_M[best_fit_index]
+    best_fit_Omega_K = Omega_K[best_fit_index]
+    best_fit_Omega_Lambda = 1 - best_fit_Omega_M - best_fit_Omega_K
+    
+    
+
+
+
 
 
     # We wish to plot d_L / z (remember the errorbars!):
@@ -193,7 +213,6 @@ def plot_luminosity_distance(filename):
         label="Fiducial model",
         color="red")
     
-    # best fit model from MCMC (ADD THIS AND SEMILOGX)
 
     plt.xlabel(r"$z$")
     plt.ylabel(r"$d_L(z)/z$ [Gpc]")
@@ -242,7 +261,7 @@ def plot_dHpdx_over_Hp(filename):
     plt.axhline(y=-0.5, color='orange', linestyle='-.', alpha=0.7, label="Matter dominated era convergence")
     plt.axhline(y=1, color='orange', linestyle=':', alpha=0.7, label="DE dominated era convergence")
 
-    plt.xlabel(r"$x$")
+    plt.xlabel(r"$x=\ln a$")
     plt.ylabel(r"$\frac{d\mathcal{H}/dx}{\mathcal{H}}$")
     plt.legend()
     #plt.xlim(-2.5, 0)
@@ -285,7 +304,7 @@ def plot_ddHpddx_over_Hp(filename):
     
 
 
-    plt.xlabel(r"$x$")
+    plt.xlabel(r"$x=\ln a$")
     plt.ylabel(r"$\frac{d^2\mathcal{H}/dx^2}{\mathcal{H}}$")
     plt.legend()
     #plt.xlim(-2.5, 0)
@@ -312,7 +331,7 @@ def plot_etaHp_over_c(filename):
         color='purple'
     )
     plt.axhline(y=1, color='black', linestyle='--', alpha=0.7, label=r"Convergence to 1 at early times")
-    plt.xlabel(r"$x$")
+    plt.xlabel(r"$x=\ln a$")
     plt.ylabel(r"$\frac{\eta \mathcal{H}}{c}$")
     plt.xlim(-14.0, 0)
     plt.ylim(0.75,3)
@@ -354,7 +373,7 @@ def plot_Hp():
         color='black'
     )
 
-    plt.xlabel(r"$x$")
+    plt.xlabel(r"$x=\ln a$")
     plt.ylabel(r"$\mathcal{H}(x)$")
     plt.xlim(-12,5)
     plt.ylim(1e-1, 1e3)
@@ -500,6 +519,10 @@ def plot_mcmc_scatterplot():
     Omega_M_flat = np.linspace(0, 1, 100)
     Omega_Lambda_flat = 1 - Omega_M_flat
     plt.plot(Omega_M_flat, Omega_Lambda_flat, color='black', linestyle='--', label="Flat Universe")
+
+
+    # Add the best fit as a separate square
+    plt.scatter(best_fit_Omega_M, 1 - best_fit_Omega_M - best_fit_Omega_K, color='red', label="Best fit from Planck", zorder=5)
 
     plt.xlabel(r"$\Omega_M$")
     plt.ylabel(r"$\Omega_\Lambda$")
