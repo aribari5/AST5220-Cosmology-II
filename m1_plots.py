@@ -56,6 +56,9 @@ def calculate_x_radiation_matter_equality():
     # From analytical calculaton
     x_rad_mat_eq = np.log((Omega_r + Omega_nu)/(Omega_b + Omega_CDM) )
 
+    print(f"Matter-radiation equality occurs at x = {x_rad_mat_eq:.3f}, z = {np.exp(-x_rad_mat_eq)-1:.3f}")
+    
+
     return x_rad_mat_eq
 
 
@@ -71,6 +74,8 @@ def calculate_x_matter_dark_energy_equality():
     # From analytical calculaton
     x_mat_DE_eq = -(1/3)*np.log((Omega_Lambda)/(Omega_b + Omega_CDM) )
 
+    print(f"Matter-dark energy equality occurs at x = {x_mat_DE_eq:.3f}, z = {np.exp(-x_mat_DE_eq)-1:.3f}")
+
     return x_mat_DE_eq
 
 def caluclate_x_onset_of_acceleration():
@@ -83,7 +88,7 @@ def caluclate_x_onset_of_acceleration():
     # From analytical calculaton
     x_ons_of_acc = (-1/3)*np.log((2*Omega_Lambda)/(Omega_b+Omega_CDM))
 
-    # print(f"Onset of acceleration occurs at z = {np.exp(-x_ons_of_acc)-1:.2f}") 
+    print(f"Onset of acceleration occurs at x = {x_ons_of_acc:.3f}, z = {np.exp(-x_ons_of_acc)-1:.3f}") 
 
     return x_ons_of_acc
 
@@ -636,6 +641,10 @@ def plot_mcmc_H0():
 # Setting the style and calling the plots
 if __name__ == "__main__":
     plot_style()
+
+    calculate_x_radiation_matter_equality()
+    calculate_x_matter_dark_energy_equality()
+    caluclate_x_onset_of_acceleration()
 
     # plot_eta_of_x("cosmology.txt") 
     # plot_t_of_x("cosmology.txt")

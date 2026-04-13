@@ -578,12 +578,17 @@ void RecombinationHistory::info() const{
 
   // Computing tau at x_decoupling, where tau = 1.0
   // Evaluating X_e at decoupling, and finding x where X_e = 0.5:
+  // Evaluating X_e at recombination, where X_e = 0.1:
   // SAHA approx
   double x_decoupling_saha        = Utils::binary_search_for_value(tau_of_x_spline_saha, tau_at_decoupling);
 
   double Xe_decoupling_saha       = Xe_of_x(x_decoupling_saha);             
   double x_Xe_half_saha           = Utils::binary_search_for_value(Xe_saha_of_x_spline, 0.5, {-8.0, -6.0});
   double t_decoupling_saha        = cosmo->t_of_x(x_decoupling_saha) / Constants.Gyr; 
+
+  double Xe_recombination         = 0.1;
+  double x_Xe_recombination       = Utils::binary_search_for_value(Xe_of_x_spline, Xe_recombination, {-8.0, -5.0}); 
+  double t_Xe_recombination       = cosmo->t_of_x(x_Xe_recombination) / Constants.Gyr;
 
 
   std::cout << "x_decoupling                         = " << x_decoupling << "\n";
@@ -608,7 +613,13 @@ void RecombinationHistory::info() const{
 
   std::cout << "x where X_e = 0.5 (Saha): x_Xe_half_saha              = " << x_Xe_half_saha << "\n";
   std::cout << "Redshift where X_e = 0.5 (Saha): z_Xe_half_saha       = " << exp(-x_Xe_half_saha) - 1.0 << "\n";
+  
+  std::cout << "---------------------------------\n";
+  std::cout << "x at X_e recombination: Xe(0.1)                       = " << x_Xe_recombination << "\n";
+  std::cout << "Redshift at X_e recombination: z(0.1)                 = " << exp(-x_Xe_recombination) - 1.0 << "\n";
+  std::cout << "Time at X_e recombination: t(0.1)                     = " << t_Xe_recombination << " Gyr\n";
 
+  std::cout << "---------------------------------\n";
   std::cout << "Freeze-out abundance of free electrons today"
             << ": Xe(x=0) = " << Xe_of_x(0.0) << "\n";
 

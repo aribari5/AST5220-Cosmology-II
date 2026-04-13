@@ -87,26 +87,6 @@ void BackgroundCosmology::solve(){
             << " Gyr\n";
   std::cout << "---------------------------------\n";
 
-  // Sanitychecks
-
-  std::cout << "---------------------------------\n";
-  std::cout << "Sanitycheck, should be close to 1:\n";
-
-  std::cout << "eta'(x=-2)*Hp(x=-2)/c = "
-  << eta_of_x_spline.deriv_x(-2.0) * (Hp_of_x(-2.0) / Constants.c)
-  << "\n";
-  std::cout << "eta'(x=0)*Hp(x=0)/c = "
-  << eta_of_x_spline.deriv_x(0.0) * (Hp_of_x(0.0) / Constants.c)
-  << "\n";
-  std::cout << "eta'(x=2)*Hp(x=2)/c = ";
-  std::cout << eta_of_x_spline.deriv_x(2.0) * (Hp_of_x(2.0) / Constants.c)
-  << "\n";
-  std::cout << "eta'(x=5)*Hp(x=5)/c = ";
-  std::cout << eta_of_x_spline.deriv_x(5.0) * (Hp_of_x(5.0) / Constants.c)
-  << "\n";
-  std::cout << "---------------------------------\n";
-
-
 
 
   Utils::EndTiming("Eta");
@@ -145,30 +125,25 @@ void BackgroundCosmology::solve(){
             << t_of_x_spline(0.0)/(Constants.Gyr)
             << " Gyr\n";
   std::cout << "---------------------------------\n";
-
-
-
-  // Sanitychecks.....
-
-  std::cout << "---------------------------------\n";
-  std::cout << "Sanitycheck, should be close to 1:\n";
-
-  std::cout << "t'(x=-2)*H_SI(x=-2) = "
-  << t_of_x_spline.deriv_x(-2.0) * (H_of_x(-2.0))
-  << "\n";  
-
-  std::cout << "t'(x=0)*H_SI(x=0) = "
-  << t_of_x_spline.deriv_x(0.0) * (H_of_x(0.0))
-  << "\n";
-  std::cout << "t'(x=2)*H_SI(x=2) = ";
-  std::cout << t_of_x_spline.deriv_x(2.0) * (H_of_x(2.0))
-  << "\n";
-  std::cout << "t'(x=5)*H_SI(x=5) = ";
-  std::cout << t_of_x_spline.deriv_x(5.0) * (H_of_x(5.0))
-  << "\n";
+  // These values are printed and inserted from m1_plots.py... not elegant sorry
+  std::cout << "t at Matter-Radiation equality:\n";
+  std::cout << "t(x=-8.132) = "
+            << t_of_x_spline(-8.132)/(Constants.Gyr)
+            << " Gyr\n";
   std::cout << "---------------------------------\n";
 
-  // yep. sane.
+  std::cout << "t at Matter-DE equality:\n";
+  std::cout << "t(x=-0.256) = "
+            << t_of_x_spline(-0.256)/(Constants.Gyr)
+            << " Gyr\n";
+  std::cout << "---------------------------------\n";
+
+  std::cout << "t at onset of acc.:\n";
+  std::cout << "t(x=-0.487) = "
+            << t_of_x_spline(-0.487)/(Constants.Gyr)
+            << " Gyr\n";
+  std::cout << "---------------------------------\n";
+
 
   Utils::EndTiming("t of x");
 }
