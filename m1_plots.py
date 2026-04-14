@@ -574,10 +574,10 @@ def plot_mcmc_Omega_Lambda_posterior():
     gaussian_fit = sp.stats.norm.pdf(x, mean_Omega_Lambda, std_Omega_Lambda)*len(Omega_Lambda)*(bin_width)  # Scale the Gaussian to match the histogram
 
 
-    plt.axvline(mean_Omega_Lambda, color='red', linestyle='--', label=f"Mean")
+    plt.axvline(mean_Omega_Lambda, color='red', linestyle='--', label=f"Mean = {mean_Omega_Lambda:.3f}")
     plt.axvline(mean_Omega_Lambda - std_Omega_Lambda, color='red', linestyle=':', label=r"$\pm1$-$\sigma$")
     plt.axvline(mean_Omega_Lambda + std_Omega_Lambda, color='red', linestyle=':')
-    plt.axvline(best_fit_Omega_Lambda, color='black', linestyle='--', label=f"Best fit from Planck")
+    plt.axvline(best_fit_Omega_Lambda, color='black', linestyle='--', label=f"Best fit from Planck = {best_fit_Omega_Lambda:.3f}")
     plt.plot(x, gaussian_fit, color='orange', linestyle='-', label="Gaussian fit to posterior")
 
     plt.xlabel(r"$\Omega_\Lambda$")

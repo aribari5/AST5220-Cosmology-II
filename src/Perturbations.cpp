@@ -37,7 +37,8 @@ void Perturbations::integrate_perturbations(){
   // Start at k_min end at k_max with n_k points with either a
   // quadratic or a logarithmic spacing
   //===================================================================
-  Vector k_array(n_k);
+
+  Vector k_array(k_min, k_max, n_k, "quadratic"); 
 
   // Loop over all wavenumbers
   for(int ik = 0; ik < n_k; ik++){
@@ -165,23 +166,47 @@ Vector Perturbations::set_ic(const double x, const double k) const{
 
   //=============================================================================
   // TODO: Set the initial conditions in the tight coupling regime
+  // note that for the tc regime, we only need l = 0,1 for photons
   //=============================================================================
-  // ...
-  // ...
+  
+  // IC for scalar quantities (Gravitational potential, baryons and CDM)
 
-  // SET: Scalar quantities (Gravitational potential, baryons and CDM)
-  // ...
-  // ...
+  double f_nu          = cosmo->get_OmegaNu() / cosmo->get_OmegaR() + cosmo->get_OmegaNu();   // 0 if no neturinoes included
+  double Hp            = cosmo->Hp_of_x(x);
 
-  // SET: Photon temperature perturbations (Theta_ell)
-  // ...
-  // ...
+
+  double Psi_ic        = -1.0/(3.0/2.0 + 2.0/5.0*f_nu);
+  double Phi_ic        = -(1.0 + 2.0/5.0*f_nu )* Psi_ic;
+  double delta_cdm_ic  = -3.0/2.0 * Psi_ic;
+  double delta_b_ic    = delta_cdm_ic;
+  double v_cdm_ic      = -(Constants.c*k/2*Hp) * Psi_ic;
+  double v_b_ic        = v_cdm_ic;
+
+  
+  // IC for photon temperature perturbations (Theta_ell)
+
+  double Theta0_ic = -0.5 * Psi_ic;
+  double Theta1_ic = (Constants.c*k/6.0*Hp) * Psi_ic;
 
   // SET: Neutrino perturbations (N_ell)
   if(neutrinos){
     // ...
     // ...
+    // Work in progress. Since I have chosen to not include Neutrinos (for now),
+    // I will instead use my time wisely and focus on the other parts of the code
+    // to get it running.
   }
+
+  // Store the IC in the y_tc vector
+
+  Phi       = Phi_ic;
+  delta_cdm = delta_cdm_ic;
+  delta_b   = delta_b_ic;
+  v_cdm     = v_cdm_ic;
+  v_b       = v_b_ic;
+
+  Theta[0]  = Theta0_ic;
+  Theta[1]  = Theta1_ic;
 
   return y_tc;
 }
@@ -245,25 +270,51 @@ Vector Perturbations::set_ic_after_tight_coupling(
   // ...
   // ...
 
-  // SET: Scalar quantities (Gravitational potental, baryons and CDM)
-  // ...
-  // ...
+  // IC for salar quantities (Gravitational potental, baryons and CDM), taken from the tight coupling regime
 
-  // SET: Photon temperature perturbations (Theta_ell)
-  // ...
-  // ...
+  delta_cdm = delta_cdm_tc;
+  delta_b   = delta_b_tc;
+  v_cdm     = v_cdm_tc;
+  v_b       = v_b_tc;
+  Phi       = Phi_tc;
+
+
+
+  // IC for photon temperature perturbations (Theta_ell), including higher order now
+
+  Theta[0] = Theta_tc[0];
+  Theta[1] = Theta_tc[1];
+
+
+  double Hp        = cosmo->Hp_of_x(x);
+  double tau_prime = rec->dtaudx_of_x(x);
+
+
+  for(int ell = 2; ell < n_ell_theta; ell++){
+  Theta[ell] = - (double(ell)/(2.0*ell + 1.0)) * (Constants.c*k)/(Hp*tau_prime) * Theta[ell-1];
+  }
 
   // SET: Photon polarization perturbations (Theta_p_ell)
   if(polarization){
     // ...
     // ...
+    // Not including polarization for now.
+    // Maybe later:)
   }
 
   // SET: Neutrino perturbations (N_ell)
   if(neutrinos){
     // ...
     // ...
+    // Not including neutrinos for now.
+    // Maybe later:)
   }
+
+  // Store the IC in the y vector
+
+  Phi       = Phi_tc;
+  delta_cdm = delta_cdm_tc;
+  //...
 
   return y;
 }
