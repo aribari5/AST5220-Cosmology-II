@@ -415,6 +415,8 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   const double *Theta           = &y[Constants.ind_start_theta_tc];
   const double *Nu              = &y[Constants.ind_start_nu_tc];
 
+
+
   // References to the quantities we are going to set in the dydx array
   double &ddelta_cdmdx    =  dydx[Constants.ind_deltacdm_tc];
   double &ddelta_bdx      =  dydx[Constants.ind_deltab_tc];
@@ -424,8 +426,8 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   double *dThetadx        = &dydx[Constants.ind_start_theta_tc];
   double *dNudx           = &dydx[Constants.ind_start_nu_tc];
 
-  double Psi           = -Phi;   
 
+  double H0            = cosmo->get_H0();
   double Hp            = cosmo->Hp_of_x(x);
   double Hp_prime      = cosmo->dHpdx_of_x(x);
   double Omega_gamma0  = cosmo->get_OmegaGamma();
@@ -433,6 +435,8 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 
   double tau_prime     = rec->dtaudx_of_x(x);
   double tau_2prime    = rec->ddtauddx_of_x(x);
+
+
 
   //=============================================================================
   // TODO: fill in the expressions for all the derivatives
@@ -442,6 +446,8 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   double ck_over_Hp   = (Constants.c*k)/Hp;
   double Theta0_prime = -ck_over_Hp*Theta[1] - dPhidx;
   double Theta2       = - (20.0/45.0) * ck_over_Hp/tau_prime * Theta[1];      // No polarization (for now)
+
+  double Psi           = -Phi -12.0*H0*H0/(Constants.c*Constants.c*k*k)*(Omega_gamma0*Theta2)*exp(-2.0*x);
 
 
   double q_numerator   = -((1.0-R)*tau_prime + (1.0+R)*tau_2prime)*(3.0*Theta[1]+v_b) - (ck_over_Hp)*Psi
@@ -454,14 +460,17 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   double Theta1_prime  = (1.0/3.0)*(q-v_b_prime);
 
   // SET: Scalar quantities (Phi, delta, v, ...)
-  ddelta_cdmdx = -ck_over_Hp * v_cdm + 3.0*dPhidx;
-  ddelta_bdx   = -ck_over_Hp * v_b + 3.0*dPhidx;
+  
+  double dPhidx = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + pow(H0/(2.0*Hp),2)*(Omega_CDM0*delta_cdm*exp(-x) 
+                       + Omega_b0*delta_b*exp(-x) + 4.0*Omega_gamma0*Theta[0]*exp(-2.0*x));                           // No neutrinos
+  ddelta_cdmdx  = -ck_over_Hp * v_cdm + 3.0*dPhidx;
+  ddelta_bdx    = -ck_over_Hp * v_b + 3.0*dPhidx;
 
-  dv_cdmdx     = -v_cdm + ck_over_Hp * Psi;
-  dv_bdx       = -v_b - ck_over_Hp*Psi + tau_prime*R*(3.0*Theta1_prime + v_b_prime);
+  dv_cdmdx      = -v_cdm + ck_over_Hp * Psi;
+  dv_bdx        = -v_b - ck_over_Hp*Psi + tau_prime*R*(3.0*Theta1_prime + v_b_prime);
 
 
-  // SET: Photon multipoles (Theta_ell)
+  // Photon multipoles (Theta_ell)
   dThetadx[0] = Theta0_prime;
   dThetadx[1] = Theta1_prime;
 
@@ -535,7 +544,7 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   double ck_over_Hp    = (Constants.c*k)/Hp;
 
   double Pi            = Theta[2];                                             //+ Theta_p[0] + Theta_p[2], however these are 0 (for now)  
-  double Theta2        = - (20.0/45.0) * ck_over_Hp/tau_prime * Theta[1];      // No polarization (for now)
+  double Theta2        = Theta[2];
 
 
   //=============================================================================
@@ -545,11 +554,11 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   // Scalar quantities (Phi, delta, v, ...)
   
   double Psi          = -Phi -12.0*H0*H0/(Constants.c*Constants.c*k*k)*(Omega_gamma0*Theta2)*exp(-2.0*x);             // No neutrinos
-  double dphidx       = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + pow(H0/(2.0*Hp),2)*(Omega_CDM0*delta_cdm*exp(-x) 
+  dPhidx       = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + pow(H0/(2.0*Hp),2)*(Omega_CDM0*delta_cdm*exp(-x) 
                        + Omega_b0*delta_b*exp(-x) + 4.0*Omega_gamma0*Theta[0]*exp(-2.0*x));                           // No neutrinos
 
-  double ddelta_cdm_dx = ck_over_Hp * v_cdm - 3.0*dphidx;
-  double ddelta_b_dx   = ck_over_Hp * v_b - 3.0*dphidx;
+  double ddelta_cdm_dx = ck_over_Hp * v_cdm - 3.0*dPhidx;
+  double ddelta_b_dx   = ck_over_Hp * v_b - 3.0*dPhidx;
 
   double dv_cdm_dx     = -v_cdm + ck_over_Hp * Psi;
   double dv_b_dx       = -v_b - ck_over_Hp*Psi + tau_prime*R*(3.0*Theta[1] + v_b); 
