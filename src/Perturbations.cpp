@@ -38,7 +38,16 @@ void Perturbations::integrate_perturbations(){
   // quadratic or a logarithmic spacing
   //===================================================================
 
-  Vector k_array(k_min, k_max, n_k, "quadratic"); 
+  // build the k array (ln spacing)
+  Vector k_array(n_k);
+  double log_k_min = log(k_min);
+  double log_k_max = log(k_max);
+  for(int i=0; i<n_k; i++){
+    double log_k = log_k_min + (log_k_max - log_k_min) * i/ (n_k-1.0);
+    k_array[i] = exp(log_k);
+  }
+
+
 
   // Loop over all wavenumbers
   for(int ik = 0; ik < n_k; ik++){
@@ -324,8 +333,55 @@ double Perturbations::get_tight_coupling_time(const double k) const{
   // TODO: compute and return x for when tight coupling ends
   // Remember all the three conditions in Callin
   //=============================================================================
-  // ...
-  // ...
+
+
+  double x_onset_of_rec = -8.3;
+
+  // defining grid we search over
+
+  const double x_start_search = x_start;
+  const double x_end_search   = -6.0;
+
+  const int    n_steps = 8000;                                        // such that dx is roughyl 0.001
+  const double dx      = (x_end_search - x_start_search) / n_steps;  
+
+  for(int i=0; i<= n_steps; i++){
+
+    double x_i = x_start_search + i*dx;
+
+      // condition 3) from course appendix
+      if(x_i > x_onset_of_rec){
+          x_tight_coupling_end = x_i; 
+      }
+
+      // relevant quantities for conditions
+      double Hp = cosmo->Hp_of_x(x_i);
+      double ck_over_Hp = (Constants.c * k) / Hp;
+      double dtaudx = rec->dtaudx_of_x(x_i);
+      double abs_dtaudx = std::abs(dtaudx);
+
+      double min_val = 10.0*std::min(1.0,ck_over_Hp);
+
+      // condition 2) from course appendix
+      if (abs_dtaudx <= min_val) {
+          x_tight_coupling_end = x_i;
+          break;
+      }
+
+      // // condition 1) from course appendix. is it even needed?
+      // if (abs_dtaudx <= 10.0) {
+      //     x_tight_coupling_end = x_i;
+      //     break;
+      // }
+    x_tight_coupling_end = x_i;
+
+  }
+
+  // final check
+  if (x_tight_coupling_end > x_onset_of_rec) {
+    x_tight_coupling_end = x_onset_of_rec;
+  }
+
 
   return x_tight_coupling_end;
 }
@@ -430,8 +486,9 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   double H0            = cosmo->get_H0();
   double Hp            = cosmo->Hp_of_x(x);
   double Hp_prime      = cosmo->dHpdx_of_x(x);
-  double Omega_gamma0  = cosmo->get_OmegaGamma();
+  double Omega_gamma0  = cosmo->get_OmegaR();
   double Omega_b0      = cosmo->get_OmegaB();
+  double Omega_CDM0    = cosmo->get_OmegaCDM();
 
   double tau_prime     = rec->dtaudx_of_x(x);
   double tau_2prime    = rec->ddtauddx_of_x(x);
@@ -461,8 +518,9 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 
   // SET: Scalar quantities (Phi, delta, v, ...)
   
-  double dPhidx = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + pow(H0/(2.0*Hp),2)*(Omega_CDM0*delta_cdm*exp(-x) 
-                       + Omega_b0*delta_b*exp(-x) + 4.0*Omega_gamma0*Theta[0]*exp(-2.0*x));                           // No neutrinos
+  dPhidx        = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + pow(H0/(2.0*Hp),2)*(Omega_CDM0*delta_cdm*exp(-x) 
+                      + Omega_b0*delta_b*exp(-x) + 4.0*Omega_gamma0*Theta[0]*exp(-2.0*x));                           // No neutrinos
+
   ddelta_cdmdx  = -ck_over_Hp * v_cdm + 3.0*dPhidx;
   ddelta_bdx    = -ck_over_Hp * v_b + 3.0*dPhidx;
 
@@ -473,11 +531,6 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   // Photon multipoles (Theta_ell)
   dThetadx[0] = Theta0_prime;
   dThetadx[1] = Theta1_prime;
-
-
-  for(int ell = 2; ell < n_ell_theta; ell++){
-  Theta[ell] = - (double(ell)/(2.0*ell + 1.0)) * (ck_over_Hp*1.0/tau_prime) * Theta[ell-1];
-  }
 
   // SET: Neutrino mutlipoles (Nu_ell)
   if(neutrinos){
@@ -532,9 +585,10 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   double H0            = cosmo->get_H0();
   double Hp            = cosmo->Hp_of_x(x);
   double Hp_prime      = cosmo->dHpdx_of_x(x);
-  double Omega_gamma0  = cosmo->get_OmegaGamma();
+  double Omega_gamma0  = cosmo->get_OmegaR();
   double Omega_b0      = cosmo->get_OmegaB();
   double Omega_CDM0    = cosmo->get_OmegaCDM();
+  double eta_of_x      = cosmo->eta_of_x(x);
 
   double R             = 4.0*Omega_gamma0*exp(-x) / (3.0*Omega_b0); 
 
@@ -553,28 +607,30 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
 
   // Scalar quantities (Phi, delta, v, ...)
   
-  double Psi          = -Phi -12.0*H0*H0/(Constants.c*Constants.c*k*k)*(Omega_gamma0*Theta2)*exp(-2.0*x);             // No neutrinos
-  dPhidx       = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + pow(H0/(2.0*Hp),2)*(Omega_CDM0*delta_cdm*exp(-x) 
+  double Psi           = -Phi -12.0*H0*H0/(Constants.c*Constants.c*k*k)*(Omega_gamma0*Theta2)*exp(-2.0*x);             // No neutrinos
+  dPhidx               = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + pow(H0/(2.0*Hp),2)*(Omega_CDM0*delta_cdm*exp(-x) 
                        + Omega_b0*delta_b*exp(-x) + 4.0*Omega_gamma0*Theta[0]*exp(-2.0*x));                           // No neutrinos
 
-  double ddelta_cdm_dx = ck_over_Hp * v_cdm - 3.0*dPhidx;
-  double ddelta_b_dx   = ck_over_Hp * v_b - 3.0*dPhidx;
+  ddelta_cdmdx = ck_over_Hp * v_cdm - 3.0*dPhidx;
+  ddelta_bdx   = ck_over_Hp * v_b - 3.0*dPhidx;
 
-  double dv_cdm_dx     = -v_cdm + ck_over_Hp * Psi;
-  double dv_b_dx       = -v_b - ck_over_Hp*Psi + tau_prime*R*(3.0*Theta[1] + v_b); 
+  dv_cdmdx     = -v_cdm + ck_over_Hp * Psi;
+  dv_bdx       = -v_b - ck_over_Hp*Psi + tau_prime*R*(3.0*Theta[1] + v_b); 
 
 
 
 
   // Photon multipoles (Theta_ell)
 
-  dThetadx[0] = -ck_over_Hp*Theta[1] - dphidx;
+  dThetadx[0] = -ck_over_Hp*Theta[1] - dPhidx;
   dThetadx[1] = (Constants.c*k)/(3.0*Hp)*(Theta[0]-2*Theta[2]+Psi) + tau_prime*(Theta[1] + (1.0/3.0)*v_b);
   
   for(int ell = 2; ell < n_ell_theta; ell++){
-    dThetadx[ell] = ck_over_Hp*(1.0/(2.0*ell+1))*(ell*Tehta[ell-1] - (ell+1.0)*Theta[ell+1]) + tau_prime*(Theta[ell]-0.1*Pi*(ell==2));
+
+    dThetadx[ell] = ck_over_Hp*(1.0/(2.0*ell+1))*(ell*Theta[ell-1] - (ell+1.0)*Theta[ell+1]) + tau_prime*(Theta[ell]-0.1*Pi*(ell==2));
+
     if (ell == n_ell_theta){
-      dThetadx[ell] = ck_over_Hp*(Theta[ell-1] - (ell+1)/(k*eta_of_x(x))*Theta[ell]) + tau_prime*Theta[ell];
+      dThetadx[ell] = ck_over_Hp*(Theta[ell-1] - (ell+1)/(k*cosmo->eta_of_x(x))*Theta[ell]) + tau_prime*Theta[ell];
     }
   }
 
