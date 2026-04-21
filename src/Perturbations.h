@@ -33,6 +33,21 @@ class Perturbations{
     // Below is a full list of splines you probably need, 
     // but you only need to make the splines you will need
 
+    // Declaring arrays
+    Vector delta_cdm_array;
+    Vector delta_b_array;
+    Vector v_cdm_array;
+    Vector v_b_array;
+    Vector Phi_array;
+    Vector Psi_array;
+    Vector Pi_array;
+
+    Vector k_array;
+    Vector x_array; 
+
+    Vector2D Theta_array;
+
+
     // Splines of scalar perturbations quantities
     Spline2D delta_cdm_spline{"delta_cdm_spline"};
     Spline2D delta_b_spline{"delta_b_spline"};
@@ -61,12 +76,12 @@ class Perturbations{
     Vector set_ic(
         const double x, 
         const double k) const;
-    
+        
     // Right hand side of the ODE in the tight coupling regime
     int rhs_tight_coupling_ode(double x, double k, const double *y, double *dydx);
     
     // Compute the time when tight coupling ends
-    double get_tight_coupling_time(const double k) const;
+    std::pair<double,int> get_tight_coupling_time(const double k, const Vector& x_array) const;
     
     //==========================================================
     // [2] The full ODE system 
