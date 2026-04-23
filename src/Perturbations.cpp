@@ -41,7 +41,7 @@ void Perturbations::integrate_perturbations(){
   // the k and x arrays
 
   k_array = exp(Utils::linspace(log(k_min),log(k_max), n_k));
-  x_array = Utils::linspace(x_start, x_end, n_x);
+  x_array = Utils::linspace(-18.0, x_end, n_x);   // putting a x_start = -18 cap, since tau'' drops at the boundary.
 
   Psi_array       = Vector(n_x * n_k);
   Pi_array        = Vector(n_x * n_k);
@@ -100,8 +100,8 @@ void Perturbations::integrate_perturbations(){
     Vector x_tc(x_array.begin(), x_array.begin() + idx_end+1);
 
     ODESolver solver_tc;
-    solver_tc.solve(dydx_tight_coupling, x_tc, y_tight_coupling_ini, gsl_odeiv2_step_rkf45);
-
+    solver_tc.solve(dydx_tight_coupling, x_tc, y_tight_coupling_ini);
+    
 
     // Sol at the end of tc
     Vector y_tight_coupling(Constants.n_ell_tot_tc);
@@ -166,7 +166,6 @@ void Perturbations::integrate_perturbations(){
 
         double ck_over_Hp = (Constants.c * k) / Hp;
 
-         
         y_array[Constants.ind_deltacdm][index] = solver_tc.get_data_by_component(Constants.ind_deltacdm_tc)[ix];
         y_array[Constants.ind_deltab][index]   = solver_tc.get_data_by_component(Constants.ind_deltab_tc)[ix];
         y_array[Constants.ind_vcdm][index]     = solver_tc.get_data_by_component(Constants.ind_vcdm_tc)[ix];
@@ -182,6 +181,7 @@ void Perturbations::integrate_perturbations(){
         double Theta2 = - (20.0 / 45.0) * ck_over_Hp / tau_prime * Theta1;
 
         y_array[Constants.ind_start_theta + 2][index] = Theta2;
+        
 
         
       }
@@ -287,12 +287,7 @@ Vector Perturbations::set_ic(const double x, const double k) const{
   // IC for photon temperature perturbations (Theta_ell)
 
   double Theta0_ic = -0.5 * Psi_ic;
-  double Theta1_ic = (Constants.c*k/6.0*Hp) * Psi_ic;
-
-  // debugging
-
-  // std::cout << "Theta0_ic = " << Theta0_ic << std::endl;
-  // std::cout << "Theta1_ic = " << Theta1_ic << std::endl;
+  double Theta1_ic = (Constants.c*k/(6.0*Hp)) * Psi_ic;
 
   // SET: Neutrino perturbations (N_ell)
   if(neutrinos){
@@ -305,14 +300,38 @@ Vector Perturbations::set_ic(const double x, const double k) const{
 
   // Store the IC in the y_tc vector
 
-  Phi       = Phi_ic;
-  delta_cdm = delta_cdm_ic;
-  delta_b   = delta_b_ic;
-  v_cdm     = v_cdm_ic;
-  v_b       = v_b_ic;
+  // Phi       = Phi_ic;
+  // delta_cdm = delta_cdm_ic;
+  // delta_b   = delta_b_ic;
+  // v_cdm     = v_cdm_ic;
+  // v_b       = v_b_ic;
 
+  
+
+  y_tc[Constants.ind_Phi_tc]      = Phi_ic;
+  y_tc[Constants.ind_deltacdm_tc] = delta_cdm_ic;
+  y_tc[Constants.ind_deltab_tc]   = delta_b_ic;
+  y_tc[Constants.ind_vcdm_tc]     = v_cdm_ic;
+  y_tc[Constants.ind_vb_tc]       = v_b_ic;
+  
   Theta[0]  = Theta0_ic;
   Theta[1]  = Theta1_ic;
+  
+
+  // debugging
+
+  std::cout << "ck/Hp         = " << Constants.c*k/Hp << std::endl;
+
+  std::cout << "IC. set at x  = " << x << " for k = " << k << std::endl;
+  std::cout << "Phi_ic        = " << Phi_ic << std::endl;
+  std::cout << "delta_cdm_ic  = " << delta_cdm_ic << std::endl;
+  std::cout << "delta_b_ic    = " << delta_b_ic << std::endl;
+  std::cout << "v_cdm_ic      = " << v_cdm_ic << std::endl;
+  std::cout << "v_b_ic        = " << v_b_ic << std::endl;
+
+  std::cout << "Theta0_ic     = " << Theta0_ic << std::endl;
+  std::cout << "Theta1_ic     = " << Theta1_ic << std::endl;
+
 
   return y_tc;
 }
@@ -612,24 +631,6 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   double R            = 4.0*Omega_gamma0*exp(-x) / (3.0*Omega_b0);
   double ck_over_Hp   = (Constants.c*k)/Hp;
 
-  //debugging
-  std::cout << "x            = " << x << std::endl;
-  std::cout << "k            = " << k << std::endl;
-  std::cout << "H0           = " << H0 << std::endl;
-  std::cout << "Hp           = " << Hp << std::endl;
-  std::cout << "Hp'          = " << Hp_prime << std::endl;
-  std::cout << "Omega_gamma0 = " <<  Omega_gamma0<< std::endl;
-  std::cout << "Omega_b0     = " << Omega_b0 << std::endl;
-  std::cout << "Omega_CDM0   = " << Omega_CDM0 << std::endl;
-  std::cout << "tau          = " << tau << std::endl;       // this one is just for debugging
-  std::cout << "tau'         = " << tau_prime << std::endl;
-  std::cout << "tau''        = " << tau_2prime << std::endl;  // wth is going :(!
-
-
-
-
-
-
   //=============================================================================
   // TODO: fill in the expressions for all the derivatives
   //=============================================================================
@@ -639,11 +640,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 
   double Psi          = -Phi-12.0*H0*H0/(Constants.c*Constants.c*k*k)*(Omega_gamma0*Theta2)*exp(-2.0*x);
 
-  // debugging
-  std::cout << "Theta1 = " << Theta[1]  << std::endl;
-  std::cout << "Theta2 = " << Theta2 << std::endl;
-  std::cout << "Psi    = " << Psi << std::endl;
-  
+
  
   
 
@@ -666,19 +663,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 
   double v_b_prime     = (1.0/(1.0+R))*(-v_b - ck_over_Hp*Psi + R*(q + ck_over_Hp*(-Theta[0]+2.0*Theta2) -ck_over_Hp*Psi) );
   double Theta1_prime  = (1.0/3.0)*(q-v_b_prime);
-
-  // debugging
-  std::cout << "halla"      << std::endl;
-  std::cout << "dPhidx  = " << dPhidx << std::endl;
-  std::cout << "Theta0' = " << Theta0_prime << std::endl;
-  std::cout << "Theta1' = " << Theta1_prime << std::endl;
-  std::cout << "q_numer = " << q_numerator << std::endl;
-  std::cout << "q_denom = " <<  q_denominator << std::endl;
-  std::cout << "q       = " << q << std::endl;
-  std::cout << "v_b'    = " <<  v_b_prime<< std::endl;
   
-
-
   //---------------------------------------
 
   ddelta_cdmdx  = ck_over_Hp * v_cdm - 3.0*dPhidx;
@@ -689,13 +674,38 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   dv_bdx        = -v_b-ck_over_Hp*Psi+tau_prime*R*(3.0*Theta1_prime + v_b_prime);
 
   // debugging
-  // std::cout << "delta_cdm' = " << ddelta_cdmdx << std::endl;
-  // std::cout << "delta_b'   = " << ddelta_bdx << std::endl;
-  // std::cout << "v_cdm'     = " << dv_cdmdx << std::endl;
-  // std::cout << "v_b'       = " << dv_bdx << std::endl;
+  
+  std::cout << "x            = " << x << std::endl;
+  std::cout << "k            = " << k << std::endl;
+  std::cout << "H0           = " << H0 << std::endl;
+  std::cout << "Hp           = " << Hp << std::endl;
+  std::cout << "Hp'          = " << Hp_prime << std::endl;
+  std::cout << "Omega_gamma0 = " <<  Omega_gamma0<< std::endl;
+  std::cout << "Omega_b0     = " << Omega_b0 << std::endl;
+  std::cout << "Omega_CDM0   = " << Omega_CDM0 << std::endl;
+  std::cout << "tau          = " << tau << std::endl;       // this one is just for debugging
+  std::cout << "tau'         = " << tau_prime << std::endl;
+  std::cout << "tau''        = " << tau_2prime << std::endl;
+
+  std::cout << "Theta1 = " << Theta[1]  << std::endl;
+  std::cout << "Theta2 = " << Theta2 << std::endl;
+  std::cout << "Psi    = " << Psi << std::endl;
+  
+
+  std::cout << "dPhidx  = " << dPhidx << std::endl;
+  std::cout << "Theta0' = " << Theta0_prime << std::endl;
+  std::cout << "Theta1' = " << Theta1_prime << std::endl;
+  std::cout << "q_numer = " << q_numerator << std::endl;
+  std::cout << "q_denom = " <<  q_denominator << std::endl;
+  std::cout << "q       = " << q << std::endl;
+  std::cout << "v_b'    = " <<  v_b_prime<< std::endl;
+  std::cout << "delta_cdm' = " << ddelta_cdmdx << std::endl;
+  std::cout << "delta_b'   = " << ddelta_bdx << std::endl;
+  std::cout << "v_cdm'     = " << dv_cdmdx << std::endl;
+  std::cout << "v_b'       = " << dv_bdx << std::endl;
 
 
-  // Photon multipoles (Theta_ell)
+  // Photon multipoles (Theta_ell) (in tc regime only Th0 and Th1 evolved)
   dThetadx[0] = Theta0_prime;
   dThetadx[1] = Theta1_prime;
 
