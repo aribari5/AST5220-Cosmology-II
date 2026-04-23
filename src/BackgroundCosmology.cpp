@@ -383,6 +383,9 @@ double BackgroundCosmology::get_H0() const{
   return H0; 
 }
 
+double BackgroundCosmology::get_H0_SI() const{ 
+  return H0_SI; 
+}
 double BackgroundCosmology::get_h() const{ 
   return h; 
 }

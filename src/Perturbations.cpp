@@ -31,6 +31,7 @@ void Perturbations::solve(){
 
 void Perturbations::integrate_perturbations(){
   Utils::StartTiming("integrateperturbation");
+  
 
   //===================================================================
   // TODO: Set up the k-array for the k's we are going to integrate over
@@ -41,7 +42,7 @@ void Perturbations::integrate_perturbations(){
   // the k and x arrays
 
   k_array = exp(Utils::linspace(log(k_min),log(k_max), n_k));
-  x_array = Utils::linspace(-18.0, x_end, n_x);   // putting a x_start = -18 cap, since tau'' drops at the boundary.
+  x_array = Utils::linspace(x_start, x_end, n_x);   // putting a x_start = -18 cap, since tau'' drops at the boundary.
 
   Psi_array       = Vector(n_x * n_k);
   Pi_array        = Vector(n_x * n_k);
@@ -90,17 +91,18 @@ void Perturbations::integrate_perturbations(){
 
     // debugging
 
-    if(idx_end <= 1){
-    std::cout << "idx_end too small: " << idx_end << std::endl;
-    throw "Tight coupling interval too short";  
-      }
-    else(std::cout << "Tight coupling ends at x = " << x_end_tight << " with index " << idx_end << std::endl);
+    // if(idx_end <= 1){
+    // std::cout << "idx_end too small: " << idx_end << std::endl;
+    // throw "Tight coupling interval too short";  
+    //   }
+    // else(std::cout << "Tight coupling ends at x = " << x_end_tight << " with index " << idx_end << std::endl);
 
 
     Vector x_tc(x_array.begin(), x_array.begin() + idx_end+1);
 
     ODESolver solver_tc;
-    solver_tc.solve(dydx_tight_coupling, x_tc, y_tight_coupling_ini);
+    solver_tc.solve(dydx_tight_coupling, x_tc, y_tight_coupling_ini, gsl_odeiv2_step_rk4);
+
     
 
     // Sol at the end of tc
@@ -108,13 +110,21 @@ void Perturbations::integrate_perturbations(){
     for(int i = 0; i < Constants.n_ell_tot_tc; ++i){
         y_tight_coupling[i] = solver_tc.get_data_by_component(i).back();
     }
-
+    //debugging
+    // std::cout << "TC solver finished. Last x = " << x_tc.back() << std::endl;
+    // std::cout << "y_tight_coupling[Phi] = " << y_tight_coupling[Constants.ind_Phi_tc] << std::endl;
+    
     //====i===============================================================
     //Full equation integration
     //===================================================================
 
     // Set up initial conditions (y_tight_coupling is the solution at the end of tight coupling)
     auto y_full_ini = set_ic_after_tight_coupling(y_tight_coupling, x_end_tight, k);
+    // debugging
+    // std::cout << "Full ICs: Phi=" << y_full_ini[Constants.ind_Phi] 
+    //       << " Theta0=" << y_full_ini[Constants.ind_start_theta]
+    //       << " Theta1=" << y_full_ini[Constants.ind_start_theta+1]
+    //       << " Theta2=" << y_full_ini[Constants.ind_start_theta+2] << std::endl;
 
     // The full ODE system
     ODEFunction dydx_full = [&](double x, const double *y, double *dydx){
@@ -122,11 +132,13 @@ void Perturbations::integrate_perturbations(){
     };
 
     // Integrate from x_end_tight -> x_end
-    Vector x_full(x_array.begin() + idx_end, x_array.end());
+    //Vector x_full(x_array.begin() + idx_end + 1, x_array.end());
+    Vector x_full; x_full.push_back(x_end_tight);
+    x_full.insert(x_full.end(), x_array.begin() + idx_end + 1, x_array.end());
     ODESolver solver_full;
-    solver_full.solve(dydx_full, x_full, y_full_ini, gsl_odeiv2_step_rkf45);
+    solver_full.solve(dydx_full, x_full, y_full_ini, gsl_odeiv2_step_rk4);
 
-    //===================================================================
+    // ===================================================================
     // TODO: remember to store the data found from integrating so we can
     // spline it below
     //
@@ -159,7 +171,7 @@ void Perturbations::integrate_perturbations(){
         // we fetch the ix-th point, which is in tc.
 
         double a          = exp(x_array[ix]);
-        double H0         = cosmo->get_H0();
+        double H0         = cosmo->get_H0_SI();
         double Hp         = cosmo->Hp_of_x(x_array[ix]);
         double OmegaR     = cosmo->get_OmegaR();
         double tau_prime  = rec->dtaudx_of_x(x_array[ix]);
@@ -204,7 +216,7 @@ void Perturbations::integrate_perturbations(){
 
 
       double a          = exp(x_array[ix]);
-      double H0         = cosmo->get_H0();
+      double H0         = cosmo->get_H0_SI();
       double OmegaR     = cosmo->get_OmegaR();
 
       double Theta2 = y_array[Constants.ind_start_theta + 2][index];
@@ -321,17 +333,17 @@ Vector Perturbations::set_ic(const double x, const double k) const{
 
   // debugging
 
-  std::cout << "ck/Hp         = " << Constants.c*k/Hp << std::endl;
+  // std::cout << "ck/Hp         = " << Constants.c*k/Hp << std::endl;
 
-  std::cout << "IC. set at x  = " << x << " for k = " << k << std::endl;
-  std::cout << "Phi_ic        = " << Phi_ic << std::endl;
-  std::cout << "delta_cdm_ic  = " << delta_cdm_ic << std::endl;
-  std::cout << "delta_b_ic    = " << delta_b_ic << std::endl;
-  std::cout << "v_cdm_ic      = " << v_cdm_ic << std::endl;
-  std::cout << "v_b_ic        = " << v_b_ic << std::endl;
+  // std::cout << "IC. set at x  = " << x << " for k = " << k << std::endl;
+  // std::cout << "Phi_ic        = " << Phi_ic << std::endl;
+  // std::cout << "delta_cdm_ic  = " << delta_cdm_ic << std::endl;
+  // std::cout << "delta_b_ic    = " << delta_b_ic << std::endl;
+  // std::cout << "v_cdm_ic      = " << v_cdm_ic << std::endl;
+  // std::cout << "v_b_ic        = " << v_b_ic << std::endl;
 
-  std::cout << "Theta0_ic     = " << Theta0_ic << std::endl;
-  std::cout << "Theta1_ic     = " << Theta1_ic << std::endl;
+  // std::cout << "Theta0_ic     = " << Theta0_ic << std::endl;
+  // std::cout << "Theta1_ic     = " << Theta1_ic << std::endl;
 
 
   return y_tc;
@@ -586,7 +598,11 @@ void Perturbations::compute_source_functions(){
 // Derivatives in the tight coupling regime
 int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, double *dydx){
 
-  //=============================================================================
+  // debugging
+  // std::cout << "RHS called at x = " << x << std::endl; 
+  // std::cout << "y[0] = " << y[0] << " y[1] = " << y[1] << " y[2] = " << y[2] << std::endl;
+  // std::cout << "y[3] = " << y[3] << " y[4] = " << y[4] << " y[5] = " << y[5] << std::endl;
+  // //=============================================================================
   // Compute where in the y / dydx array each component belongs
   // This is just an example of how to do it to make it easier
   // Feel free to organize the component any way you like
@@ -618,7 +634,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   double *dNudx           = &dydx[Constants.ind_start_nu_tc];
 
 
-  double H0            = cosmo->get_H0();
+  double H0            = cosmo->get_H0_SI();
   double Hp            = cosmo->Hp_of_x(x);
   double Hp_prime      = cosmo->dHpdx_of_x(x);
   double Omega_gamma0  = cosmo->get_OmegaR();
@@ -636,7 +652,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   // TODO: fill in the expressions for all the derivatives
   //=============================================================================
 
-  double Theta1       = y[Constants.ind_start_theta + 1]; 
+  double Theta1       = y[Constants.ind_start_theta_tc + 1]; 
   double Theta2       = - (20.0/45.0) * ck_over_Hp/tau_prime * Theta[1];      // No polarization (for now)
 
   double Psi          = -Phi-12.0*H0*H0/(Constants.c*Constants.c*k*k)*(Omega_gamma0*Theta2)*exp(-2.0*x);
@@ -647,7 +663,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 
   // SET: Scalar quantities (Phi, delta, v, ...)
   
-  dPhidx        = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + pow(H0/(2.0*Hp),2)*(Omega_CDM0*delta_cdm*exp(-x) 
+  dPhidx        = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + 0.5*pow(H0/Hp,2)*(Omega_CDM0*delta_cdm*exp(-x) 
                       + Omega_b0*delta_b*exp(-x) + 4.0*Omega_gamma0*Theta[0]*exp(-2.0*x));                           // No neutrinos
 
   //---------------------------------------
@@ -672,38 +688,39 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   
   
   dv_cdmdx      = -v_cdm+ck_over_Hp*Psi;
-  dv_bdx        = -v_b-ck_over_Hp*Psi+tau_prime*R*(3.0*Theta1_prime + v_b_prime);
+  dv_bdx        = v_b_prime; //-v_b-ck_over_Hp*Psi+tau_prime*R*(3.0*Theta1_prime + v_b_prime);
 
   // debugging
   
-  std::cout << "x            = " << x << std::endl;
-  std::cout << "k            = " << k << std::endl;
-  std::cout << "H0           = " << H0 << std::endl;
-  std::cout << "Hp           = " << Hp << std::endl;
-  std::cout << "Hp'          = " << Hp_prime << std::endl;
-  std::cout << "Omega_gamma0 = " <<  Omega_gamma0<< std::endl;
-  std::cout << "Omega_b0     = " << Omega_b0 << std::endl;
-  std::cout << "Omega_CDM0   = " << Omega_CDM0 << std::endl;
-  std::cout << "tau          = " << tau << std::endl;       // this one is just for debugging
-  std::cout << "tau'         = " << tau_prime << std::endl;
-  std::cout << "tau''        = " << tau_2prime << std::endl;
+  // std::cout << "x            = " << x << std::endl;
+  // std::cout << "k            = " << k << std::endl;
+  // std::cout << "ck/Hp        = " << ck_over_Hp << std::endl;
+  // std::cout << "H0           = " << H0 << std::endl;
+  // std::cout << "Hp           = " << Hp << std::endl;
+  // std::cout << "Hp'          = " << Hp_prime << std::endl;
+  // std::cout << "Omega_gamma0 = " <<  Omega_gamma0<< std::endl;
+  // std::cout << "Omega_b0     = " << Omega_b0 << std::endl;
+  // std::cout << "Omega_CDM0   = " << Omega_CDM0 << std::endl;
+  // std::cout << "tau          = " << tau << std::endl;       // this one is just for debugging
+  // std::cout << "tau'         = " << tau_prime << std::endl;
+  // std::cout << "tau''        = " << tau_2prime << std::endl;
 
-  std::cout << "Theta1 = " << Theta[1]  << std::endl;   // blows up
-  std::cout << "Theta2 = " << Theta2 << std::endl;
-  std::cout << "Psi    = " << Psi << std::endl;
+  // std::cout << "Theta1 = " << Theta[1]  << std::endl;   // blows up
+  // std::cout << "Theta2 = " << Theta2 << std::endl;
+  // std::cout << "Psi    = " << Psi << std::endl;
   
 
-  std::cout << "dPhidx  = " << dPhidx << std::endl;
-  std::cout << "Theta0' = " << Theta0_prime << std::endl;
-  std::cout << "Theta1' = " << Theta1_prime << std::endl;
-  std::cout << "q_numer = " << q_numerator << std::endl;
-  std::cout << "q_denom = " <<  q_denominator << std::endl;
-  std::cout << "q       = " << q << std::endl;
-  std::cout << "v_b'    = " <<  v_b_prime<< std::endl;
-  std::cout << "delta_cdm' = " << ddelta_cdmdx << std::endl;
-  std::cout << "delta_b'   = " << ddelta_bdx << std::endl;
-  std::cout << "v_cdm'     = " << dv_cdmdx << std::endl;
-  std::cout << "v_b'       = " << dv_bdx << std::endl;
+  // std::cout << "dPhidx  = " << dPhidx << std::endl;
+  // std::cout << "Theta0' = " << Theta0_prime << std::endl;
+  // std::cout << "Theta1' = " << Theta1_prime << std::endl;
+  // std::cout << "q_numer = " << q_numerator << std::endl;
+  // std::cout << "q_denom = " <<  q_denominator << std::endl;
+  // std::cout << "q       = " << q << std::endl;
+  // std::cout << "v_b'    = " <<  v_b_prime<< std::endl;
+  // std::cout << "delta_cdm' = " << ddelta_cdmdx << std::endl;
+  // std::cout << "delta_b'   = " << ddelta_bdx << std::endl;
+  // std::cout << "v_cdm'     = " << dv_cdmdx << std::endl;
+  // std::cout << "v_b'       = " << dv_bdx << std::endl;
 
 
   // Photon multipoles (Theta_ell) (in tc regime only Th0 and Th1 evolved)
@@ -727,6 +744,10 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 //     std::cout << "dydx_"<<i<<"="<<dydx[i]<< "at x=" << x << " k=" << k << " is finite."<< std::endl;
 //   }
 // }
+  // debugging
+  // std::cout << "dydx[0]=" << dydx[0] << " dydx[1]=" << dydx[1] 
+  //         << " dydx[2]=" << dydx[2] << " dydx[3]=" << dydx[3]
+  //         << " dydx[4]=" << dydx[4] << " dydx[5]=" << dydx[5] << std::endl;
 
   return GSL_SUCCESS;
 }
@@ -736,7 +757,9 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 //====================================================
 
 int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dydx){
-  
+  // debugging
+  // std::cout << "FULL RHS called at x = " << x << std::endl;
+  // std::cout << "y[Phi] = " << y[Constants.ind_Phi] << " y[Theta0] = " << y[Constants.ind_start_theta] << std::endl;
   //=============================================================================
   // Compute where in the y / dydx array each component belongs
   // This is just an example of how to do it to make it easier
@@ -770,7 +793,7 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   double *dTheta_pdx      = &dydx[Constants.ind_start_thetap];
   double *dNudx           = &dydx[Constants.ind_start_nu];
   
-  double H0            = cosmo->get_H0();
+  double H0            = cosmo->get_H0_SI();
   double Hp            = cosmo->Hp_of_x(x);
   double Hp_prime      = cosmo->dHpdx_of_x(x);
   double Omega_gamma0  = cosmo->get_OmegaR();

@@ -46,9 +46,9 @@ void RecombinationHistory::solve_number_density_electrons(){
 
   const double OmegaB      = cosmo->get_OmegaB();
   const double OmegaB0     = cosmo->get_OmegaB(0.0);
-  const double H0 = cosmo->get_H0() * Constants.km / Constants.Mpc;  // 1/s
+  const double H0          = cosmo->get_H0_SI();
   const double rho_crit0   = 3.0*pow(H0,2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
-  const double m_H = Constants.m_H;
+  const double m_H         = Constants.m_H;
 
   // Calculate recombination history
   bool saha_regime = true;
@@ -172,7 +172,7 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
   const double OmegaR      = cosmo->get_OmegaR();
   const double OmegaLambda = cosmo->get_OmegaLambda();
   
-  const double H0          = cosmo->get_H0() * Constants.km / Constants.Mpc;     // 1/s
+  const double H0          = cosmo->get_H0_SI();
   const double rho_crit0   = 3.0*pow(H0,2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
   const double TCMB0       = cosmo->get_TCMB(0.0);                               // CMB temperature today in K
 
@@ -309,7 +309,7 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   const double OmegaLambda = cosmo->get_OmegaLambda();
   
   const double H           = cosmo->H_of_x(x);
-  const double H0          = cosmo->get_H0() * Constants.km / Constants.Mpc;     // 1/s
+  const double H0          = cosmo->get_H0_SI();
   const double rho_crit0   = 3.0*pow(H0,2)/(8.0*Constants.pi*Constants.G);       // Critical density today in kg/m^3
   const double TCMB0       = cosmo->get_TCMB(0.0);                                                   // CMB temperature today in K
   const double T_b         = TCMB0/a;
@@ -382,7 +382,7 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   // Since the IC is at x=0 (tau(0) = 0) the array should go from x_end -> x_start 
 
   const int npts = 10000;
-  Vector x_array = Utils::linspace(x_end, x_start, npts);
+  Vector x_array = Utils::linspace(x_end, log(1e-10), npts);     // had to extend from x_start = -log(1e-8) to log(1e-10) for tau to behave at the beginning. Was leaking in to Perturbations.cpp
 
   double tau_initial = 0.0;     
   Vector tau_ic{tau_initial};                   // vector with i.c. for tau
