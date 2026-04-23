@@ -387,7 +387,7 @@ void RecombinationHistory::solve_for_optical_depth_tau(){
   double tau_initial = 0.0;     
   Vector tau_ic{tau_initial};                   // vector with i.c. for tau
 
-  tau_ode_solver.solve(dtaudx, x_array, tau_ic,gsl_odeiv2_step_rkf45);//    ,gsl_odeiv2_step_rkf45
+  tau_ode_solver.solve(dtaudx, x_array, tau_ic,gsl_odeiv2_step_rkf45);
 
   auto tau_array = tau_ode_solver.get_data_by_component(0);         // get the 0th component of the sol.
 
@@ -496,7 +496,7 @@ double RecombinationHistory::dtaudx_of_x(double x) const{
 }
 
 double RecombinationHistory::ddtauddx_of_x(double x) const{
-  return tau_of_x_spline.deriv_xx(x);
+ return tau_of_x_spline.deriv_xx(x);
 }
 
 double RecombinationHistory::g_tilde_of_x(double x) const{

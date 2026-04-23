@@ -53,14 +53,14 @@ int main(int argc, char **argv){
   
   // Solve the recombination history
   RecombinationHistory rec(&cosmo, Yp);
-  // rec.solve();
-  // rec.info();
+  rec.solve();
+  rec.info();
 
   // Output recombination quantities
   // rec.output("recombination.txt");
   
   // Remove when module is completed
-  return 0;
+  // return 0;
 
   //=========================================================================
   // Module III
@@ -76,7 +76,7 @@ int main(int argc, char **argv){
   pert.output(kvalue, "perturbations_k0.01.txt");
   
   // Remove when module is completed
-  return 0;
+  // return 0;
   
   //=========================================================================
   // Module IV

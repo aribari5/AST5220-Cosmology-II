@@ -10,6 +10,7 @@
 #include "Utils.h"
 #include "BackgroundCosmology.h"
 #include "RecombinationHistory.h"
+#include <utility>
 
 using Vector   = std::vector<double>;
 using Vector2D = std::vector<Vector>;
@@ -34,11 +35,12 @@ class Perturbations{
     // but you only need to make the splines you will need
 
     // Declaring arrays
-    Vector delta_cdm_array;
-    Vector delta_b_array;
-    Vector v_cdm_array;
-    Vector v_b_array;
-    Vector Phi_array;
+    // Vector delta_cdm_array;
+    // Vector delta_b_array;
+    // Vector v_cdm_array;
+    // Vector v_b_array;
+    // Vector Phi_array;
+    
     Vector Psi_array;
     Vector Pi_array;
 
@@ -46,7 +48,7 @@ class Perturbations{
     Vector x_array; 
 
     Vector2D Theta_array;
-
+    Vector2D y_array;
 
     // Splines of scalar perturbations quantities
     Spline2D delta_cdm_spline{"delta_cdm_spline"};
@@ -54,6 +56,7 @@ class Perturbations{
     Spline2D v_cdm_spline{"v_cdm_spline"};
     Spline2D v_b_spline{"v_b_spline"};
     Spline2D Phi_spline{"Phi_spline"};
+    Spline2D y_spline{"y_spline"};
     Spline2D Pi_spline{"Pi_spline"};
     Spline2D Psi_spline{"Psi_spline"};
    

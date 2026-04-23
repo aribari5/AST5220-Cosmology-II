@@ -81,7 +81,7 @@ def plot_optical_depth_taus():
     plt.ylabel(r'Optical Depth $\tau$')
     plt.legend()
     plt.ylim(-1e8, 1e8)
-    plt.xlim(-12,0)
+    plt.xlim(-18.4207,0)
 
     plt.savefig("figures/taus.pdf")
     plt.show()
