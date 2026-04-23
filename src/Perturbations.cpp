@@ -178,6 +178,7 @@ void Perturbations::integrate_perturbations(){
 
         // Theta2 is computed using an approx. in tc. #override
         double Theta1 = y_array[Constants.ind_start_theta + 1][index];
+
         double Theta2 = - (20.0 / 45.0) * ck_over_Hp / tau_prime * Theta1;
 
         y_array[Constants.ind_start_theta + 2][index] = Theta2;
@@ -635,7 +636,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   // TODO: fill in the expressions for all the derivatives
   //=============================================================================
 
-  
+  double Theta1       = y[Constants.ind_start_theta + 1]; 
   double Theta2       = - (20.0/45.0) * ck_over_Hp/tau_prime * Theta[1];      // No polarization (for now)
 
   double Psi          = -Phi-12.0*H0*H0/(Constants.c*Constants.c*k*k)*(Omega_gamma0*Theta2)*exp(-2.0*x);
@@ -687,7 +688,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   std::cout << "tau'         = " << tau_prime << std::endl;
   std::cout << "tau''        = " << tau_2prime << std::endl;
 
-  std::cout << "Theta1 = " << Theta[1]  << std::endl;
+  std::cout << "Theta1 = " << Theta[1]  << std::endl;   // blows up
   std::cout << "Theta2 = " << Theta2 << std::endl;
   std::cout << "Psi    = " << Psi << std::endl;
   
