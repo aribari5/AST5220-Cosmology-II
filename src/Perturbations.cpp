@@ -974,14 +974,18 @@ void Perturbations::output(const double k, const std::string filename) const{
   auto x_array = Utils::linspace(x_start, x_end, npts);
   auto print_data = [&] (const double x) {
     double arg = k * (cosmo->eta_of_x(0.0) - cosmo->eta_of_x(x));
-    fp << x                  << " ";
-    fp << get_Theta(x,k,0)   << " ";
-    fp << get_Theta(x,k,1)   << " ";
-    fp << get_Theta(x,k,2)   << " ";
-    fp << get_Phi(x,k)       << " ";
-    fp << get_Psi(x,k)       << " ";
-    fp << get_Pi(x,k)        << " ";
-    fp << get_Source_T(x,k)  << " ";
+    fp << x                     << " ";
+    fp << get_Theta(x,k,0)      << " ";
+    fp << get_Theta(x,k,1)      << " ";
+    fp << get_Theta(x,k,2)      << " ";
+    fp << get_Phi(x,k)          << " ";
+    fp << get_Psi(x,k)          << " ";
+    fp << get_Pi(x,k)           << " ";
+    fp << get_delta_cdm(x,k)    << " ";
+    fp << get_delta_b(x,k)      << " ";
+    fp << get_v_cdm(x,k)        << " ";
+    fp << get_v_b(x,k)          << " ";
+    fp << get_Source_T(x,k)     << " ";
     fp << get_Source_T(x,k) * Utils::j_ell(5,   arg)           << " ";
     fp << get_Source_T(x,k) * Utils::j_ell(50,  arg)           << " ";
     fp << get_Source_T(x,k) * Utils::j_ell(500, arg)           << " ";

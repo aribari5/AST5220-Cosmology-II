@@ -37,29 +37,68 @@ def plot_style():
 
 def load_perturbation_data(filename):
     # Load the data from perturbations.txt
-    filename = "./perturbations.txt"
-    data = np.loadtxt(filename)
+    data                 = np.loadtxt(filename)
+    x                    = data[:, 0]
+    Theta0               = data[:, 1]
+    Theta1               = data[:, 2]
+    Theta2               = data[:, 3]
+    Phi                  = data[:, 4]
+    Psi                  = data[:, 5]
+    Pi                   = data[:, 6]
 
-    return data
+    delta_cdm            = data[:, 7]
+    delta_b              = data[:, 8]
+
+    v_cdm                = data[:, 9]
+    v_b                  = data[:, 10]
+
+    Source_T             = data[:, 11]
+    Source_T_j_ell_5     = data[:, 12]
+    Source_T_j_ell_50    = data[:, 13]
+    Source_T_j_ell_500   = data[:, 14]
+    
+
+    return x,Theta0,Theta1,Theta2,Phi,Psi,Pi,delta_cdm,delta_b,v_cdm,v_b,Source_T,Source_T_j_ell_5,Source_T_j_ell_50,Source_T_j_ell_500
 
 def plot_delta_gamma_cdm_b():
 
-    k_values = [0.1, 0.01, 0.001]
+    k_values     = [0.1, 0.01, 0.001]
+    k_val_colors = ['green', 'red', 'blue']
+
+    linestyles   = {'dotted': r'$\delta_\gamma$',
+                    '--'    : r'$\delta_\mathrm{CDM}$',
+                    'solid' : r'$\delta_b$'}
+
+    
+    plt.figure()
+
+
     for k in k_values:
+        
+        file_path = f"./perturbations_k{k}.txt"
+        x,Theta0,Theta1,Theta2,Phi,Psi,Pi,delta_cdm,delta_b,v_cdm,v_b,Source_T,Source_T_j_ell_5,Source_T_j_ell_50,Source_T_j_ell_500 = load_perturbation_data(file_path)
+        delta_gamma = 4*Theta0 
 
-        data            = load_perturbation_data(f'perturbations_k{k}.txt')
-        x               = np.linspace(-18.0, 0.0, len(data[:,0]))
-        Theta0          = data[:,5]
-        delta_gamma     = 4*Theta0
-        delta_cdm       = data[:,0]
-        delta_b         = data[:,1]
+        colour = k_val_colors[k_values.index(k)]
+       
+        plt.semilogy(x, delta_gamma, ls = 'dotted', color=colour)
+        plt.semilogy(x, delta_cdm,   ls = '--',color=colour)
+        plt.semilogy(x, delta_b,     ls = 'solid',color=colour, label = f'$k={k}/Mpc$')
 
-        plt.figure()
-        plt.semilogy(x, delta_gamma, label=r'$\delta_\gamma$', color='purple')
-        plt.semilogy(x, delta_cdm, label=r'$\delta_{cdm}$', color='black')
-        plt.semilogy(x, delta_b, label=r'$\delta_b$', color='red')
-        plt.show()
-### blablabla fix later
+    k_val_legend = plt.legend(loc='upper left')
+    plt.gca().add_artist(k_val_legend)
+
+    linestyle_legend_handles = [
+        plt.Line2D([0], [0], color='black', linestyle=ls, label=label)
+        for ls, label in linestyles.items()
+    ]
+    plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
+
+    plt.xlabel(r'$x=\ln a$')
+    plt.ylabel(r'Perturbation Amplitude')
+    plt.ylim(1e-1,1e5)
+
+    plt.show()
 
 
 
