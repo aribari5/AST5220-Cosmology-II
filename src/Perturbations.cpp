@@ -69,11 +69,16 @@ void Perturbations::integrate_perturbations(){
     double k = k_array[ik];
 
     // Find x_tc end and index of x_tc in the x_array
-    std::pair<double,int> tc_time = get_tight_coupling_time(k, x_array);
+    std::pair<double, int> tc_pair = get_tight_coupling_time(k, x_array);
 
-    double x_end_tight = tc_time.first;
-    int idx_end = tc_time.second;
+    double x_end_tight = tc_pair.first;
+    int idx_end        = tc_pair.second;
 
+    // debugging
+    if (k > 0.001) {   //i want to check for large k
+    std::cout << "k = " << k << "   x_end_tight = " << x_end_tight 
+              << "   idx_end = " << idx_end << std::endl;
+}
     //===================================================================
     // Tight coupling integration
     //===================================================================
@@ -98,18 +103,16 @@ void Perturbations::integrate_perturbations(){
     // else(std::cout << "Tight coupling ends at x = " << x_end_tight << " with index " << idx_end << std::endl);
 
 
-    Vector x_tc(x_array.begin(), x_array.begin() + idx_end+1);
+    Vector x_tc(x_array.begin(), x_array.begin() + idx_end+1);    // including x_end_tight
 
     ODESolver solver_tc;
     solver_tc.solve(dydx_tight_coupling, x_tc, y_tight_coupling_ini, gsl_odeiv2_step_rk4);
 
-    
+    // debugging
+    std::cout << "k = " << k << "   x_end_tight = " << x_end_tight 
+          << "   idx_end = " << idx_end << std::endl;
 
-    // Sol at the end of tc
-    Vector y_tight_coupling(Constants.n_ell_tot_tc);
-    for(int i = 0; i < Constants.n_ell_tot_tc; ++i){
-        y_tight_coupling[i] = solver_tc.get_data_by_component(i).back();
-    }
+    
     //debugging
     // std::cout << "TC solver finished. Last x = " << x_tc.back() << std::endl;
     // std::cout << "y_tight_coupling[Phi] = " << y_tight_coupling[Constants.ind_Phi_tc] << std::endl;
@@ -118,26 +121,38 @@ void Perturbations::integrate_perturbations(){
     //Full equation integration
     //===================================================================
 
-    // Set up initial conditions (y_tight_coupling is the solution at the end of tight coupling)
-    auto y_full_ini = set_ic_after_tight_coupling(y_tight_coupling, x_end_tight, k);
+    // Set up initial conditions for full system (from tc!)
+
+    Vector y_tight_coupling_end(Constants.n_ell_tot_tc);
+
+    for(int i = 0; i < Constants.n_ell_tot_tc; ++i) {
+        y_tight_coupling_end[i] = solver_tc.get_data_by_component(i).back();
+    }
+
+    Vector y_full_ini = set_ic_after_tight_coupling(y_tight_coupling_end, x_end_tight, k);
+      
+     // The full ODE system
+    ODEFunction dydx_full = [&](double x, const double *y, double *dydx){
+      return rhs_full_ode(x, k, y, dydx);
+    };
     // debugging
     // std::cout << "Full ICs: Phi=" << y_full_ini[Constants.ind_Phi] 
     //       << " Theta0=" << y_full_ini[Constants.ind_start_theta]
     //       << " Theta1=" << y_full_ini[Constants.ind_start_theta+1]
     //       << " Theta2=" << y_full_ini[Constants.ind_start_theta+2] << std::endl;
 
-    // The full ODE system
-    ODEFunction dydx_full = [&](double x, const double *y, double *dydx){
-      return rhs_full_ode(x, k, y, dydx);
-    };
 
     // Integrate from x_end_tight -> x_end
     //Vector x_full(x_array.begin() + idx_end + 1, x_array.end());
+
     Vector x_full; x_full.push_back(x_end_tight);
     x_full.insert(x_full.end(), x_array.begin() + idx_end + 1, x_array.end());
+
+
     ODESolver solver_full;
     solver_full.solve(dydx_full, x_full, y_full_ini, gsl_odeiv2_step_rk4);
 
+   
     // ===================================================================
     // TODO: remember to store the data found from integrating so we can
     // spline it below
@@ -165,7 +180,9 @@ void Perturbations::integrate_perturbations(){
       
 
       // are we in tc or full reigime
-      if(ix < idx_end){ 
+      //if(ix < idx_end){ 
+
+      if (x_array[ix] < x_end_tight - 1e-10) {
         // if yes, the solutions are in solver_tc
 
         // we fetch the ix-th point, which is in tc.
@@ -191,9 +208,9 @@ void Perturbations::integrate_perturbations(){
         // Theta2 is computed using an approx. in tc. #override
         double Theta1 = y_array[Constants.ind_start_theta + 1][index];
 
-        double Theta2 = - (20.0 / 45.0) * ck_over_Hp / tau_prime * Theta1;
+        double Theta2_tc = - (20.0 / 45.0) * ck_over_Hp / tau_prime * Theta1;
 
-        y_array[Constants.ind_start_theta + 2][index] = Theta2;
+        y_array[Constants.ind_start_theta + 2][index] = Theta2_tc;
         
 
         
@@ -424,8 +441,9 @@ Vector Perturbations::set_ic_after_tight_coupling(
   double Hp        = cosmo->Hp_of_x(x);
   double tau_prime = rec->dtaudx_of_x(x);
 
+  Theta[2] = - (20.0/45.0) * (Constants.c * k) / (Hp * tau_prime) * Theta[1];
 
-  for(int ell = 2; ell < n_ell_theta; ell++){
+  for(int ell = 3; ell < n_ell_theta; ell++){
   Theta[ell] = - (double(ell)/(2.0*ell + 1.0)) * (Constants.c*k)/(Hp*tau_prime) * Theta[ell-1];
   }
 
@@ -465,23 +483,12 @@ std::pair<double,int> Perturbations::get_tight_coupling_time(const double k,cons
 
 
   double x_onset_of_rec = -8.3;
+  int idx_end = 0;
+  
 
-  // defining grid we search over
+  for(int i=0; i< n_x; i++){
 
-  const double x_start_search = x_start;
-  const double x_end_search   = -6.0;
-
-  const int    n_steps = 8000;                                        // such that dx is roughyl 0.001
-  const double dx      = (x_end_search - x_start_search) / n_steps;  
-
-  for(int i=0; i<= n_steps; i++){
-
-    double x_i = x_start_search + i*dx;
-
-      // condition 3) from course appendix
-      if(x_i > x_onset_of_rec){
-          x_tight_coupling_end = x_i; 
-      }
+    double x_i = x_array[i];
 
       // relevant quantities for conditions
       double Hp = cosmo->Hp_of_x(x_i);
@@ -491,35 +498,23 @@ std::pair<double,int> Perturbations::get_tight_coupling_time(const double k,cons
 
       double min_val = 10.0*std::min(1.0,ck_over_Hp);
 
-      // condition 2) from course appendix
-      if (abs_dtaudx <= min_val) {
-          x_tight_coupling_end = x_i;
-          break;
+      if (x_i > x_onset_of_rec ||  abs_dtaudx < 10.0 * std::max(1.0, ck_over_Hp) || abs_dtaudx < 10.0 ) {
+      
+        x_tight_coupling_end = x_i;
+      break;
       }
-
-      // condition 1) from course appendix. is it even needed?
-      // if (abs_dtaudx <= 10.0) {
-      //     x_tight_coupling_end = x_i;
-      //     break;
-      // }
-
-    // x_tight_coupling_end = x_i; // why did i put this here?
-
+        idx_end += 1;
   }
-
-  // final check
-  if (x_tight_coupling_end > x_onset_of_rec) {
-    std::cout << "x_tight_coupling_end = "<< x_tight_coupling_end << " is greater than x_onset_of_rec = " << x_onset_of_rec << ". Setting x_tight_coupling = x_onset_of_rec." << std::endl;
-    x_tight_coupling_end = x_onset_of_rec;
-  }
-
   // Find the index in the x_array corresponding to x_tight_coupling_end. useful to have.
-  auto it = std::lower_bound(x_array.begin(), x_array.end(), x_tight_coupling_end);
-  int idx_end = std::distance(x_array.begin(), it);
+  // auto it = std::lower_bound(x_array.begin(), x_array.end(), x_tight_coupling_end);
+  // int idx_end = std::distance(x_array.begin(), it);
 
+  
 
   return {x_tight_coupling_end, idx_end};
 }
+
+
 
 //====================================================
 // After integrsating the perturbation compute the
@@ -670,15 +665,15 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
 
   double Theta0_prime = -ck_over_Hp*Theta[1] - dPhidx;
   
-  double q_numerator   = -(((1.0-R)*tau_prime + (1.0+R)*tau_2prime)*(3.0*Theta[1]+v_b) - (ck_over_Hp)*Psi
-                         + (1.0-Hp_prime/Hp)*(ck_over_Hp)*(-Theta[0]+2.0*Theta2) - (ck_over_Hp)*Theta0_prime);
+  double q_numerator   = -( ((1.0-R)*tau_prime + (1.0+R)*tau_2prime) *(3.0*Theta[1]+v_b) ) - (ck_over_Hp)*Psi
+                         + (1.0-Hp_prime/Hp)*(ck_over_Hp)*(-Theta[0]+2.0*Theta2) - (ck_over_Hp)*Theta0_prime;
   double q_denominator = (1.0+R)*tau_prime + (Hp_prime/Hp) -1.0;
 
   //---------------------------------------
 
   double q             = q_numerator / q_denominator;
 
-  double v_b_prime     = (1.0/(1.0+R))*(-v_b - ck_over_Hp*Psi + R*(q + ck_over_Hp*(-Theta[0]+2.0*Theta2) -ck_over_Hp*Psi) );
+  double v_b_prime     = (1.0/(1.0+R))* (-v_b - ck_over_Hp*Psi + R*(q + ck_over_Hp*(-Theta[0]+2.0*Theta2) -ck_over_Hp*Psi) );
   double Theta1_prime  = (1.0/3.0)*(q-v_b_prime);
   
   //---------------------------------------
@@ -687,7 +682,7 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   ddelta_bdx    = ck_over_Hp * v_b - 3.0*dPhidx;
   
   
-  dv_cdmdx      = -v_cdm+ck_over_Hp*Psi;
+  dv_cdmdx      = -v_cdm - ck_over_Hp*Psi;
   dv_bdx        = v_b_prime; //-v_b-ck_over_Hp*Psi+tau_prime*R*(3.0*Theta1_prime + v_b_prime);
 
   // debugging
@@ -825,7 +820,7 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   ddelta_cdmdx = ck_over_Hp * v_cdm - 3.0*dPhidx;
   ddelta_bdx   = ck_over_Hp * v_b - 3.0*dPhidx;
 
-  dv_cdmdx     = -v_cdm + ck_over_Hp * Psi;
+  dv_cdmdx     = -v_cdm - ck_over_Hp * Psi;
   dv_bdx       = -v_b - ck_over_Hp*Psi + tau_prime*R*(3.0*Theta[1] + v_b); 
 
 
@@ -834,9 +829,9 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
   // Photon multipoles (Theta_ell)
 
   dThetadx[0] = -ck_over_Hp*Theta[1] - dPhidx;
-  dThetadx[1] = (Constants.c*k)/(3.0*Hp)*(Theta[0]-2*Theta[2]+Psi) + tau_prime*(Theta[1] + (1.0/3.0)*v_b);
+  dThetadx[1] = ck_over_Hp/3.0*(Theta[0]-2*Theta[2]+Psi) + tau_prime*(Theta[1] + (1.0/3.0)*v_b);
   
-  for(int ell = 2; ell < n_ell_theta-1; ell++){
+  for(int ell = 3; ell < n_ell_theta-1; ell++){
 
     dThetadx[ell] = ck_over_Hp*(1.0/(2.0*ell+1))*(ell*Theta[ell-1] - (ell+1.0)*Theta[ell+1]) + tau_prime*(Theta[ell]-0.1*Pi*(ell==2));
   }
