@@ -64,7 +64,8 @@ class PowerSpectrum {
     // Do the line of sight integration for a single quantity
     // for all ells by providing a source_function(x,k) (can be temp, pol, ...)
     Vector2D line_of_sight_integration_single(
-        Vector & k_array, 
+        Vector & k_array,
+        Vector & x_array, 
         std::function<double(double,double)> &source_function);
     
     // Splines of the reusult of the LOS integration

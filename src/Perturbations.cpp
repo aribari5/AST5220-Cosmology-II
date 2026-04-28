@@ -20,8 +20,8 @@ void Perturbations::solve(){
   // Integrate all the perturbation equation and spline the result
   integrate_perturbations();
 
-  // Compute source functions and spline the result
-  compute_source_functions();
+  // Compute source functions and spline the result. Note: (SW, ISW, Doppler, Polarization)
+  compute_source_functions(true,true,true,true);
 }
 
 //====================================================
@@ -520,7 +520,7 @@ std::pair<double,int> Perturbations::get_tight_coupling_time(const double k,cons
 // After integrsating the perturbation compute the
 // source function(s)
 //====================================================
-void Perturbations::compute_source_functions(){
+void Perturbations::compute_source_functions(bool SW, bool ISW, bool Doppler, bool Polarization){
   Utils::StartTiming("source");
 
   //=============================================================================
@@ -550,24 +550,50 @@ void Perturbations::compute_source_functions(){
       //=============================================================================
       // TODO: Compute the source functions
       //=============================================================================
+      const double c                = Constants.c;
 
-      // const double Hp       = cosmo->Hp_of_x(x);
 
-      const double tau       = rec->tau_of_x(x);
-      const double g_tilde   = rec->g_tilde_of_x(x);
+      const double Hp               = cosmo->Hp_of_x(x);
+      const double dHpdx            = cosmo->dHpdx_of_x(x);
+      const double ddHpddx          = cosmo->ddHpddx_of_x(x);
+
+      const double tau              = rec->tau_of_x(x);
+      const double g_tilde          = rec->g_tilde_of_x(x);
+      const double dgdx_tilde_of_x  = rec->dgdx_tilde_of_x(x);
+      const double ddgddx_tilde_of_x = rec->ddgddx_tilde_of_x(x);
+
+      const double vb               = get_v_b(x, k);
+      const double dvbdx            = get_dv_bdx(x, k);
     
-      double dPhidx = Phi_spline.deriv_x(x, k);
-      double dPsidx = Psi_spline.deriv_x(x, k);
+      double Psi    = get_Psi(x, k);
+      double Pi     = get_Pi(x,k);
+      double dPidx  = get_dPidx(x, k);
+      double ddPiddx= get_ddPiddx(x, k);
+      double Phi    = get_Phi(x, k);
+      double dPhidx = get_dPhidx(x, k);
+      double dPsidx = get_dPsidx(x, k);
+      double Theta0 = get_Theta(x, k, 0);
 
 
-      double S1_term = g_tilde*(y_array[Constants.ind_start_theta][index]
-                     + Psi_array[index]+(1.0/4.0) * Pi_array[index]);
-      double S2_term = exp(-tau) * (dPsidx- dPhidx );
-      double S3_term = 0.0; // 0 for now, no polarization
-      double S4_term = 0.0; // ------------"------------- 
+
+      double SW_term              = SW            ? g_tilde*(Theta0 + Psi + Pi/4.0)
+                                                  : 0.0;   
+      double ISW_term             = ISW           ? exp(-tau) * (dPsidx - dPhidx )
+                                                  : 0.0;      
+      double Doppler_term         = Doppler       ? (1.0/c*k)* ( dHpdx*g_tilde*vb + Hp*dgdx_tilde_of_x*vb + Hp*g_tilde*dvbdx )
+                                                  : 0.0;      
+      double Polarization_term    = Polarization  ? 3.0/(4.0 *c*c*k*k) * (
+                                                    dHpdx* (dHpdx*g_tilde*Pi + Hp*dgdx_tilde_of_x*Pi +Hp*g_tilde*ddPiddx ) 
+                                                  + Hp* (
+                                                    (ddHpddx*g_tilde*Pi + dHpdx*dgdx_tilde_of_x*Pi + dHpdx*g_tilde*dPidx)
+                                                  + (dHpdx*dgdx_tilde_of_x*Pi + Hp*ddgddx_tilde_of_x*Pi + Hp*dgdx_tilde_of_x*dPidx)
+                                                  + (dHpdx*g_tilde*dPidx + Hp*dgdx_tilde_of_x*dPidx +Hp*g_tilde*ddPiddx)
+                                                  )
+                                                  )
+                                                  : 0.0;                                                  
 
       // Temperature source
-      ST_array[index] = S1_term + S2_term + S3_term + S4_term;
+      ST_array[index] = SW_term + ISW_term + Doppler_term + Polarization_term;
 
       // Polarization source
       if(Constants.polarization){
@@ -830,7 +856,8 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
 
   dThetadx[0] = -ck_over_Hp*Theta[1] - dPhidx;
   dThetadx[1] = ck_over_Hp/3.0*(Theta[0]-2*Theta[2]+Psi) + tau_prime*(Theta[1] + (1.0/3.0)*v_b);
-  
+  dThetadx[2] = ck_over_Hp/5.0 * (2.0*Theta[1] - 3.0*Theta[3]) + tau_prime * (Theta[2] - Pi/10.0);
+
   for(int ell = 3; ell < n_ell_theta-1; ell++){
 
     dThetadx[ell] = ck_over_Hp*(1.0/(2.0*ell+1))*(ell*Theta[ell-1] - (ell+1.0)*Theta[ell+1]) + tau_prime*(Theta[ell]-0.1*Pi*(ell==2));
@@ -838,7 +865,7 @@ int Perturbations::rhs_full_ode(double x, double k, const double *y, double *dyd
 
     // for the last multipole 
     int ell = n_ell_theta-1;  // since we start counting from 0, the last multipole is n_ell_theta-1 
-    dThetadx[ell] = ck_over_Hp*(Theta[ell-1] - (ell+1)/(k*cosmo->eta_of_x(x))*Theta[ell]) + tau_prime*Theta[ell];
+    dThetadx[ell] = ck_over_Hp*(Theta[ell-1] - (double(ell)+1)/(k*cosmo->eta_of_x(x))*Theta[ell]) + tau_prime*Theta[ell];
     
 
   // SET: Photon polarization multipoles (Theta_p_ell)
@@ -878,14 +905,29 @@ double Perturbations::get_v_cdm(const double x, const double k) const{
 double Perturbations::get_v_b(const double x, const double k) const{
   return v_b_spline(x,k);
 }
+double Perturbations::get_dv_bdx(const double x, const double k) const{
+  return v_b_spline.deriv_x(x,k);
+}
 double Perturbations::get_Phi(const double x, const double k) const{
   return Phi_spline(x,k);
+}
+double Perturbations::get_dPhidx(const double x, const double k) const{
+  return Phi_spline.deriv_x(x,k);
 }
 double Perturbations::get_Psi(const double x, const double k) const{
   return Psi_spline(x,k);
 }
+double Perturbations::get_dPsidx(const double x, const double k) const{
+  return Psi_spline.deriv_x(x,k);
+}
 double Perturbations::get_Pi(const double x, const double k) const{
   return Pi_spline(x,k);
+}
+double Perturbations::get_dPidx(const double x, const double k) const{
+  return Pi_spline.deriv_x(x,k);
+}
+double Perturbations::get_ddPiddx(const double x, const double k) const{
+  return Pi_spline.deriv_xx(x,k);
 }
 double Perturbations::get_Source_T(const double x, const double k) const{
   return ST_spline(x,k);

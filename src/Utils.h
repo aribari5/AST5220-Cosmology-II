@@ -55,8 +55,9 @@ extern struct ConstantsAndUnits {
   const double x_end   = 0.0;
 
   // Include polarization and/or neutrinos?
-  const bool polarization  = true;
-  const bool neutrinos     = true;
+  // not included for now
+  const bool polarization  = false;
+  const bool neutrinos     = false;
 
   // For integration of perturbations (number of equations and positions in arrays)
   const int n_scalars           = 5;

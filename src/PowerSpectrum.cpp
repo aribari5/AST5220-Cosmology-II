@@ -69,15 +69,25 @@ void PowerSpectrum::generate_bessel_function_splines(){
   // might break down. Use j_ell(z) = Utils::j_ell(ell, z)
   //=============================================================================
 
+  double z_max    = 40000.0;                          // as mentioned^
+
+  const double delta_z = M_PI / 8.0;                  // idk where this came from tbh
+  const int n_z        = int(z_max / delta_z);
+
+  Vector z_array  = Utils::linspace(0.0,z_max, n_z);
+
   for(size_t i = 0; i < ells.size(); i++){
-    const int ell = ells[i];
+    int ell = ells[i];
 
-    // ...
-    // ...
-    // ...
-    // ...
+    
+    Vector j_ell = Vector(z_array.size(), 0.0);
 
-    // Make the j_ell_splines[i] spline
+    for(size_t i = 0; i < z_array.size(); i++){
+      j_ell[i] = Utils::j_ell(ell, z_array[i]);
+    }
+
+    j_ell_splines[i].create(z_array, j_ell, "j_"+ std::to_string(ell) +"_spline" );
+
   }
 
   Utils::EndTiming("besselspline");
@@ -90,11 +100,18 @@ void PowerSpectrum::generate_bessel_function_splines(){
 
 Vector2D PowerSpectrum::line_of_sight_integration_single(
     Vector & k_array,
+    Vector & x_array,
     std::function<double(double,double)> &source_function){
+
   Utils::StartTiming("lineofsight");
     
   // Make storage for the results
   Vector2D result = Vector2D(ells.size(), Vector(k_array.size()));
+
+  double eta0     = cosmo->eta_of_x(0.0);
+
+  // Vector x_array  = pert-> x_array; 
+  double dx       = x_array[1] - x_array[0]; 
 
   for(size_t ik = 0; ik < k_array.size(); ik++){
 
@@ -104,11 +121,32 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
     // given value of k
     // Trapezoidal rule
     //=============================================================================
-    // ...
-    // ...
-    // ...
+    double k = k_array[ik];
 
-    // Store the result for Source_ell(k) in results[ell][ik]
+    Vector LoS_ints(ells.size(), 0.0);
+    for(int ix = 0; ix < x_array.size(); ix++){
+
+      double x          = x_array[ix];
+      double eta        = cosmo->eta_of_x(x);
+      double S_tilde    = source_function(x, k);
+
+      for(size_t ell = 0; ell < ells.size(); ell++){
+
+        double j_ell = j_ell_splines[ell](k*(eta - eta0));
+        
+        // Trapezoidal rule:  multiply 0.5 at the boundaries
+        if (ix == 0 || ix == x_array.size() - 1)
+          LoS_ints[ell] += 0.5 * S_tilde * j_ell * dx;
+
+        else
+        LoS_ints[ell] += S_tilde * j_ell * dx;
+
+        // Store the result for Source_ell(k) in results[ell][ik]
+        result[ell][ik] = LoS_ints[ell];
+        
+      }
+    }
+
   }
 
   Utils::EndTiming("lineofsight");
@@ -124,7 +162,16 @@ void PowerSpectrum::line_of_sight_integration(){
   //============================================================================
   // TODO: Make linear spaced k-array with dk ~ 2pi/eta0/N where N >~ 6
   //============================================================================
-  Vector k_array;
+  
+  const double eta0 = cosmo->eta_of_x(0.0);
+  const int N       = 6;
+  const double dk   = 2.0*M_PI/(eta0/N);
+  const int n_k_i   = int((k_max - k_min) / dk);
+
+  Vector k_array = Utils::linspace(k_min, k_max, n_k_i);
+  Vector x_array = Utils::linspace(Constants.x_start, Constants.x_end, n_x);
+
+
 
   // Make storage for the splines we are to create
   thetaT_ell_of_k_spline = std::vector<Spline>(nells);
@@ -139,20 +186,19 @@ void PowerSpectrum::line_of_sight_integration(){
   };
 
   // Do the line of sight integration
-  Vector2D thetaT_ell_of_k = line_of_sight_integration_single(k_array, source_function_T);
+  Vector2D thetaT_ell_of_k = line_of_sight_integration_single(k_array,x_array, source_function_T);
 
   // Spline the result and store it in thetaT_ell_of_k_spline
-  // ...
-  // ...
-  // ...
-  // ...
+  for (int i = 0; i < ells.size(); i++) {
+    thetaT_ell_of_k_spline[i].create(k_array, thetaT_ell_of_k[i], "thetaT_"+ std::to_string(ells[i])+"ell_of_k_spline");
+  }
 
   //============================================================================
   // TODO: Solve for ThetaE_ell(k) and spline
   //============================================================================
   if(Constants.polarization){
 
-    // ...
+    // No polarization for now
     // ...
     // ...
     // ...
@@ -173,19 +219,48 @@ Vector PowerSpectrum::solve_for_cell(
   // TODO: Make log-spaced k-array with n = (kmax-kmin)/ dk points where
   // dk ~ 2.0 * M_PI / eta0 / N with N >~ 32 
   //============================================================================
-  Vector log_k_array; 
+
+  const double eta0   = cosmo->eta_of_x(0.0);
+  const int N         = 32;
+  const double dk     = 2.0*M_PI/(eta0/N);
+  int n_k_i           = int((k_max - k_min) / dk);
+
+  Vector log_k_array  = Utils::linspace(log(k_min), log(k_max), n_k_i);
+  
 
   //============================================================================
   // TODO: Integrate Cell = Int 4 * pi * P(k) f_ell g_ell dlog_k
   // Trapezoidal rule
   //============================================================================
 
-  // ...
-  // ...
-  // ...
-  // ...
+  double dlog_k     = log_k_array[1] - log_k_array[0];
+  
+  Vector result(nells,0.0);
 
-  Vector result;
+  for(int i = 0; i < nells; i++) {
+
+    int ell         = ells[i];
+    double LoS_int  = 0.0;
+
+    for(int ik = 0; ik < n_k_i; ik++) {
+
+      double k      = exp(log_k_array[ik]);
+      double P_k    = primordial_power_spectrum(k);
+
+      double f_ell  = f_ell_spline[i](k);
+      double g_ell  = g_ell_spline[i](k);
+
+      // Trapezoidal rule
+      if (ik == 0 || ik == n_k_i - 1){
+        LoS_int += 2.0*M_PI*P_k*f_ell*g_ell * dk;
+      }
+      else{
+        LoS_int += 4.0*M_PI*P_k*f_ell*g_ell * dk;
+      }
+    }
+
+    result[i] = LoS_int;
+  }
 
   return result;
 }
@@ -202,16 +277,22 @@ double PowerSpectrum::primordial_power_spectrum(const double k) const{
 // P(k) in units of (Mpc)^3
 //====================================================
 
-double PowerSpectrum::get_matter_power_spectrum(const double x, const double k_mpc) const{
-  double pofk = 0.0;
+double PowerSpectrum::get_matter_power_spectrum(const double x, const double k) const{
+  double k_mpc = k / Constants.Mpc; 
 
   //=============================================================================
   // TODO: Compute the matter power spectrum
   //=============================================================================
+  double Hp             = cosmo->Hp_of_x(x);
+  double Phi            = pert->get_Phi(x,k);
+  double ck_over_Hp     = (Constants.c * k) / Hp;
 
-  // ...
-  // ...
-  // ...
+  double Delta_M        = 2.0/3.0 * ck_over_Hp * ck_over_Hp * Phi;
+  double abs_Delta_M    = std::abs(Delta_M);
+
+  double P_k            = primordial_power_spectrum(k);
+
+  double pofk           = abs_Delta_M * abs_Delta_M * P_k;
 
   return pofk;
 }

@@ -111,7 +111,7 @@ class Perturbations{
     //==========================================================
     
     // Compute source functions and spline the result
-    void compute_source_functions();
+    void compute_source_functions(bool SW = true, bool ISW = true, bool Doppler = true, bool Polarization = true);
 
   public:
 
@@ -135,9 +135,14 @@ class Perturbations{
     double get_delta_b(const double x, const double k) const;
     double get_v_cdm(const double x, const double k) const;
     double get_v_b(const double x, const double k) const;
+    double get_dv_bdx(const double x, const double k) const;
     double get_Phi(const double x, const double k) const;
+    double get_dPhidx(const double x, const double k) const;
     double get_Psi(const double x, const double k) const;
+    double get_dPsidx(const double x, const double k) const;
     double get_Pi(const double x, const double k) const;
+    double get_dPidx(const double x, const double k) const;
+    double get_ddPiddx(const double x, const double k) const;
     double get_Theta(const double x, const double k, const int ell) const;
     double get_Theta_p(const double x, const double k, const int ell) const;
     double get_Nu(const double x, const double k, const int ell) const;
