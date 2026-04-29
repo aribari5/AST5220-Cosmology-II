@@ -92,7 +92,7 @@ int main(int argc, char **argv){
   power.output("cells.txt");
   
   // Remove when module is completed
-  return 0;
+  // return 0;
 
   Utils::EndTiming("Everything");
 }

@@ -82,8 +82,8 @@ void PowerSpectrum::generate_bessel_function_splines(){
     
     Vector j_ell = Vector(z_array.size(), 0.0);
 
-    for(size_t i = 0; i < z_array.size(); i++){
-      j_ell[i] = Utils::j_ell(ell, z_array[i]);
+    for(size_t j = 0; j < z_array.size(); j++){
+      j_ell[j] = Utils::j_ell(ell, z_array[j]);
     }
 
     j_ell_splines[i].create(z_array, j_ell, "j_"+ std::to_string(ell) +"_spline" );
@@ -132,7 +132,7 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
 
       for(size_t ell = 0; ell < ells.size(); ell++){
 
-        double j_ell = j_ell_splines[ell](k*(eta - eta0));
+        double j_ell = j_ell_splines[ell](k*(eta0 - eta));
         
         // Trapezoidal rule:  multiply 0.5 at the boundaries
         if (ix == 0 || ix == x_array.size() - 1)
@@ -141,11 +141,13 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
         else
         LoS_ints[ell] += S_tilde * j_ell * dx;
 
-        // Store the result for Source_ell(k) in results[ell][ik]
-        result[ell][ik] = LoS_ints[ell];
-        
       }
     }
+    for(size_t ell = 0; ell < ells.size(); ell++){
+        
+        // Store the result for Source_ell(k) in results[ell][ik]
+        result[ell][ik] = LoS_ints[ell];
+      }
 
   }
 
@@ -167,7 +169,7 @@ void PowerSpectrum::line_of_sight_integration(){
   const int N       = 6;
   const double dk   = 2.0*M_PI/(eta0/N);
   const int n_k_i   = int((k_max - k_min) / dk);
-
+  const int n_x     = 1000;                                                   // unsure of this val
   Vector k_array = Utils::linspace(k_min, k_max, n_k_i);
   Vector x_array = Utils::linspace(Constants.x_start, Constants.x_end, n_x);
 
@@ -244,18 +246,20 @@ Vector PowerSpectrum::solve_for_cell(
 
     for(int ik = 0; ik < n_k_i; ik++) {
 
-      double k      = exp(log_k_array[ik]);
-      double P_k    = primordial_power_spectrum(k);
+      double k          = exp(log_k_array[ik]);
+      double P_k        = primordial_power_spectrum(k);
 
-      double f_ell  = f_ell_spline[i](k);
-      double g_ell  = g_ell_spline[i](k);
+      double f_ell      = f_ell_spline[i](k);
+      double g_ell      = g_ell_spline[i](k);
+
+      double integrand  = 4.0 * M_PI * P_k * f_ell * g_ell;
 
       // Trapezoidal rule
       if (ik == 0 || ik == n_k_i - 1){
-        LoS_int += 2.0*M_PI*P_k*f_ell*g_ell * dk;
+        LoS_int += 0.5 * integrand * dlog_k;
       }
       else{
-        LoS_int += 4.0*M_PI*P_k*f_ell*g_ell * dk;
+        LoS_int += integrand * dlog_k;
       }
     }
 
