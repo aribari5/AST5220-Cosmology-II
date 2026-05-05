@@ -25,7 +25,7 @@ int main(int argc, char **argv){
 
   // Power-spectrum parameters
   double A_s         = 2.1e-9;
-  double n_s         = 0.965;
+  double n_s         = 1.0;//0.965;
   double kpivot_mpc  = 0.05;
 
   //=========================================================================

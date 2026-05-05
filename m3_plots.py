@@ -50,7 +50,7 @@ def load_perturbation_data(filename):
     delta_b              = data[:, 8]
 
     v_cdm                = data[:, 9]
-    v_b                  = data[:, 10]
+    v_b                  = abs(data[:, 10])
 
     Source_T             = data[:, 11]
     Source_T_j_ell_5     = data[:, 12]
@@ -66,8 +66,8 @@ def plot_delta_gamma_cdm_b():
     k_val_colors = ['green', 'red', 'blue']
 
     linestyles   = {'dotted': r'$\delta_\gamma$',
-                    '--'    : r'$\delta_\mathrm{CDM}$',
-                    'solid' : r'$\delta_b$'}
+                    'solid'    : r'$\delta_\mathrm{CDM}$',
+                    '--' : r'$\delta_b$'}
 
     
     plt.figure()
@@ -82,8 +82,8 @@ def plot_delta_gamma_cdm_b():
         colour = k_val_colors[k_values.index(k)]
        
         plt.semilogy(x, delta_gamma, ls = 'dotted', color=colour)
-        plt.semilogy(x, delta_cdm,   ls = '--',color=colour)
-        plt.semilogy(x, delta_b,     ls = 'solid',color=colour, label = f'$k={k}/Mpc$')
+        plt.semilogy(x, delta_cdm,   ls = 'solid',color=colour)
+        plt.semilogy(x, delta_b,     ls = '--',color=colour, label = f'$k={k}/Mpc$')
 
     k_val_legend = plt.legend(loc='upper left')
     plt.gca().add_artist(k_val_legend)
@@ -106,8 +106,8 @@ def plot_v_gamma_cdm_b():
     k_val_colors = ['green', 'red', 'blue']
 
     linestyles   = {'dotted': r'$v_\gamma$',
-                    '--'    : r'$v_\mathrm{CDM}$',
-                    'solid' : r'$v_b$'}
+                    'solid'    : r'$v_\mathrm{CDM}$',
+                    '--' : r'$v_b$'}
 
     
     plt.figure()
@@ -122,8 +122,8 @@ def plot_v_gamma_cdm_b():
         colour = k_val_colors[k_values.index(k)]
        
         plt.semilogy(x, v_gamma, ls = 'dotted', color=colour)
-        plt.semilogy(x, v_cdm,   ls = '--',color=colour)
-        plt.semilogy(x, v_b,     ls = 'solid',color=colour, label = f'$k={k}/Mpc$')
+        plt.semilogy(x, v_cdm,   ls = 'solid',color=colour)
+        plt.semilogy(x, v_b,     ls = '--',color=colour, label = f'$k={k}/Mpc$')
 
     k_val_legend = plt.legend(loc='upper left')
     plt.gca().add_artist(k_val_legend)
@@ -182,11 +182,11 @@ def plot_Theta0_Theta1():
     k_val_legend = plt.legend(loc='upper left')
     plt.gca().add_artist(k_val_legend)
 
-    # linestyle_legend_handles = [
-    #     plt.Line2D([0], [0], color='black', linestyle=ls, label=label)
-    #     for ls, label in linestyles.items()
-    # ]
-    # plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
+    linestyle_legend_handles = [
+        plt.Line2D([0], [0], color='black', linestyle=ls, label=label)
+        for ls, label in linestyles.items()
+    ]
+    plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
 
     plt.tight_layout()
     plt.show()
@@ -262,8 +262,8 @@ def plot_Phi_PhiplusPsi():
 
 
 
-    k_val_legend = plt.legend(loc='upper left')
-    plt.gca().add_artist(k_val_legend)
+    # k_val_legend = plt.legend(loc='upper left')
+    # plt.gca().add_artist(k_val_legend)
 
     # linestyle_legend_handles = [
     #     plt.Line2D([0], [0], color='black', linestyle=ls, label=label)
@@ -281,7 +281,7 @@ def plot_Phi_PhiplusPsi():
 if __name__ == "__main__":
     plot_style()
     plot_delta_gamma_cdm_b()
-    plot_Theta0_Theta1()
     plot_v_gamma_cdm_b()
+    plot_Theta0_Theta1()
     plot_Phi()
     plot_Phi_PhiplusPsi()

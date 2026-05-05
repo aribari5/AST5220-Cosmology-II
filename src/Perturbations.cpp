@@ -21,7 +21,7 @@ void Perturbations::solve(){
   integrate_perturbations();
 
   // Compute source functions and spline the result. Note: (SW, ISW, Doppler, Polarization)
-  compute_source_functions(true,true,true,true);
+  compute_source_functions(true,false,false,false);
 }
 
 //====================================================
@@ -152,6 +152,10 @@ void Perturbations::integrate_perturbations(){
     ODESolver solver_full;
     solver_full.solve(dydx_full, x_full, y_full_ini, gsl_odeiv2_step_rk4);
 
+    // debugging
+    std::cout << "For k=" << k << " transition at x=" << x_end_tight << " idx_end=" << idx_end << std::endl;
+    std::cout << "TC v_b last = " << solver_tc.get_data_by_component(Constants.ind_vb_tc).back() << std::endl;
+    std::cout << "Full v_b first = " << solver_full.get_data_by_component(Constants.ind_vb)[0] << std::endl;
    
     // ===================================================================
     // TODO: remember to store the data found from integrating so we can
@@ -327,16 +331,7 @@ Vector Perturbations::set_ic(const double x, const double k) const{
     // I will instead use my time wisely and focus on the other parts of the code
     // to get it running.
   }
-
-  // Store the IC in the y_tc vector
-
-  // Phi       = Phi_ic;
-  // delta_cdm = delta_cdm_ic;
-  // delta_b   = delta_b_ic;
-  // v_cdm     = v_cdm_ic;
-  // v_b       = v_b_ic;
-
-  
+ 
 
   y_tc[Constants.ind_Phi_tc]      = Phi_ic;
   y_tc[Constants.ind_deltacdm_tc] = delta_cdm_ic;
@@ -498,7 +493,7 @@ std::pair<double,int> Perturbations::get_tight_coupling_time(const double k,cons
 
       double min_val = 10.0*std::min(1.0,ck_over_Hp);
 
-      if (x_i > x_onset_of_rec ||  abs_dtaudx < 10.0 * std::max(1.0, ck_over_Hp) || abs_dtaudx < 10.0 ) {
+      if (x_i > x_onset_of_rec ||  abs_dtaudx < 10.0 * std::max(1.0, ck_over_Hp)) {
       
         x_tight_coupling_end = x_i;
       break;
@@ -560,7 +555,7 @@ void Perturbations::compute_source_functions(bool SW, bool ISW, bool Doppler, bo
       const double tau              = rec->tau_of_x(x);
       const double g_tilde          = rec->g_tilde_of_x(x);
       const double dgdx_tilde_of_x  = rec->dgdx_tilde_of_x(x);
-      const double ddgddx_tilde_of_x = rec->ddgddx_tilde_of_x(x);
+      const double ddgddx_tilde_of_x= rec->ddgddx_tilde_of_x(x);
 
       const double vb               = get_v_b(x, k);
       const double dvbdx            = get_dv_bdx(x, k);
@@ -576,14 +571,14 @@ void Perturbations::compute_source_functions(bool SW, bool ISW, bool Doppler, bo
 
 
 
-      double SW_term              = SW            ? g_tilde*(Theta0 + Psi + Pi/4.0)
+      double SW_term              = SW            ? g_tilde//*(Theta0 + Psi + Pi/4.0)
                                                   : 0.0;   
       double ISW_term             = ISW           ? exp(-tau) * (dPsidx - dPhidx )
                                                   : 0.0;      
-      double Doppler_term         = Doppler       ? (1.0/c*k)* ( dHpdx*g_tilde*vb + Hp*dgdx_tilde_of_x*vb + Hp*g_tilde*dvbdx )
+      double Doppler_term         = Doppler       ? -(1.0/(c*k))* ( dHpdx*g_tilde*vb + Hp*dgdx_tilde_of_x*vb + Hp*g_tilde*dvbdx )
                                                   : 0.0;      
       double Polarization_term    = Polarization  ? 3.0/(4.0 *c*c*k*k) * (
-                                                    dHpdx* (dHpdx*g_tilde*Pi + Hp*dgdx_tilde_of_x*Pi +Hp*g_tilde*ddPiddx ) 
+                                                    dHpdx* (dHpdx*g_tilde*Pi + Hp*dgdx_tilde_of_x*Pi +Hp*g_tilde*dPidx ) 
                                                   + Hp* (
                                                     (ddHpddx*g_tilde*Pi + dHpdx*dgdx_tilde_of_x*Pi + dHpdx*g_tilde*dPidx)
                                                   + (dHpdx*dgdx_tilde_of_x*Pi + Hp*ddgddx_tilde_of_x*Pi + Hp*dgdx_tilde_of_x*dPidx)
@@ -672,17 +667,15 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   //=============================================================================
   // TODO: fill in the expressions for all the derivatives
   //=============================================================================
+  
+
+  // SET: Scalar quantities (Phi, delta, v, ...)
 
   double Theta1       = y[Constants.ind_start_theta_tc + 1]; 
   double Theta2       = - (20.0/45.0) * ck_over_Hp/tau_prime * Theta[1];      // No polarization (for now)
 
   double Psi          = -Phi-12.0*H0*H0/(Constants.c*Constants.c*k*k)*(Omega_gamma0*Theta2)*exp(-2.0*x);
 
-
- 
-  
-
-  // SET: Scalar quantities (Phi, delta, v, ...)
   
   dPhidx        = Psi - (1.0/3.0)*ck_over_Hp*ck_over_Hp*Phi + 0.5*pow(H0/Hp,2)*(Omega_CDM0*delta_cdm*exp(-x) 
                       + Omega_b0*delta_b*exp(-x) + 4.0*Omega_gamma0*Theta[0]*exp(-2.0*x));                           // No neutrinos
@@ -712,7 +705,6 @@ int Perturbations::rhs_tight_coupling_ode(double x, double k, const double *y, d
   dv_bdx        = v_b_prime; //-v_b-ck_over_Hp*Psi+tau_prime*R*(3.0*Theta1_prime + v_b_prime);
 
   // debugging
-  
   // std::cout << "x            = " << x << std::endl;
   // std::cout << "k            = " << k << std::endl;
   // std::cout << "ck/Hp        = " << ck_over_Hp << std::endl;

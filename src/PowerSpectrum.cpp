@@ -111,7 +111,8 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
   double eta0     = cosmo->eta_of_x(0.0);
 
   // Vector x_array  = pert-> x_array; 
-  double dx       = x_array[1] - x_array[0]; 
+  double dx       = x_array[1] - x_array[0];        // must be less than 0.05!
+  std::cout << "dx for LOS integration: " << dx << "\n";
 
   for(size_t ik = 0; ik < k_array.size(); ik++){
 
@@ -124,7 +125,7 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
     double k = k_array[ik];
 
     Vector LoS_ints(ells.size(), 0.0);
-    for(int ix = 0; ix < x_array.size(); ix++){
+    for(int ix = 0; ix < x_array.size(); ix++){   // switched the order to save compuational power
 
       double x          = x_array[ix];
       double eta        = cosmo->eta_of_x(x);
@@ -235,7 +236,10 @@ Vector PowerSpectrum::solve_for_cell(
   // Trapezoidal rule
   //============================================================================
 
-  double dlog_k     = log_k_array[1] - log_k_array[0];
+  int N_dlogk       = 10;                               // 10 min. # of points pr osc.
+
+  double dlog_k     = 2*M_PI/(k_max*eta0*N_dlogk);
+  // double dlog_k     = log_k_array[1] - log_k_array[0];
   
   Vector result(nells,0.0);
 
@@ -294,11 +298,11 @@ double PowerSpectrum::get_matter_power_spectrum(const double x, const double k) 
   double Delta_M        = 2.0/3.0 * ck_over_Hp * ck_over_Hp * Phi;
   double abs_Delta_M    = std::abs(Delta_M);
 
-  double P_k            = primordial_power_spectrum(k);
+  double P_k_prim       = primordial_power_spectrum(k);
 
-  double pofk           = abs_Delta_M * abs_Delta_M * P_k;
+  double P_k_matter     = abs_Delta_M * abs_Delta_M * P_k_prim;
 
-  return pofk;
+  return P_k_matter;
 }
 
 //====================================================
