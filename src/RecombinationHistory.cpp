@@ -199,78 +199,7 @@ std::pair<double,double> RecombinationHistory::electron_fraction_from_saha_equat
     Xe = (-C + sqrt(C*C + 4.0*C)) / 2.0;
   }
 
-  // debugging
-  // list of x test values
-//   std::vector<double> test_x_values = {-12.0, -10.0, -8.0, -6.0, -4.0, -2.0, 0.0}; 
-//   const double epsilon = 0.05; // tolerance for comparing x values
-
-//  for (const double test_x : test_x_values) {
-//   if ((test_x - epsilon < x) && (x < test_x + epsilon)) {
-//     std::cout << "---------------------------------\n";
-//     std::cout << "Xe is = " << Xe << " at x = " << x << ":\n";
-//     std::cout << "n_H is = " << n_H << " at x = " << x << ":\n";
-//     std::cout << "---------------------------------\n";
-//   }
-// }
-
-
   double ne = Xe*n_H;
-  
-  // debugging for loop checking if any values in Xe or ne are NaN
-  // std::cout << "---------------------------------\n";
-  // std::cout << "---------Debugging NaNs----------\n";
-  // std::cout << "---------------------------------\n";
-  // std::cout << "x: " << x << " C: " << C << "\n";
-  // std::cout << "T_b: " << T_b << "\n";
-  // std::cout << "epsilon/(kT): " << epsilon_0/(k_b*T_b) << "\n";
-  // std::cout << "n_b: " << n_b << " n_H: " << n_H << "\n";
-  // std::cout << "OmegaB: " << OmegaB << " OmegaB0: " << OmegaB0 << "\n";
-  // std::cout << "rho_crit0: " << rho_crit0 << "\n";
-  // std::cout << "m_H: " << m_H << "\n";
-
-  // std::cout << "---------------------------------\n";
-  // for (int i = 0; i < 1; i++) {
-  //   if (std::isnan(T_b)) {
-  //     std::cout << "T_b is NaN at x = " << x << "\n";
-  //     break;
-  //   }
-  //   else {
-  //     std::cout << "T_b is a real number " << T_b << " at x = " << x << "\n";
-  //   }
-  // }
-  // std::cout << "---------------------------------\n";
-  // for (int i = 0; i < 1; i++) {
-  //   if (std::isnan(C)) {
-  //     std::cout << "C is NaN at x = " << x << "\n";
-  //     break;
-  //   }
-  //   else {
-  //     std::cout << "C is a real number " << C << " at x = " << x << "\n";
-  //   }
-  // }
-  // std::cout << "---------------------------------\n";
-
-  // for (int i = 0; i < 1; i++) {
-  //   if (std::isnan(Xe)) {
-  //     std::cout << "Xe is NaN at x = " << x << "\n";
-  //     break;
-  //   }
-  //   else {
-  //     std::cout << "Xe is a real number " << Xe << " at x = " << x << "\n";
-  //   }
-  // }
-  // std::cout << "---------------------------------\n";
-
-  // for (int i = 0; i < 1; i++) {
-  //   if (std::isnan(ne)) {
-  //     std::cout << "ne is NaN at x = " << x << "\n";
-  //     break;
-  //   }
-  //   else {
-  //     std::cout << "ne is a real number " << ne << " at x = " << x << "\n";
-  //   }
-
-  // }
 
 
   return std::pair<double,double>(Xe, ne);

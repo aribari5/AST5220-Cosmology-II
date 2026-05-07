@@ -63,6 +63,14 @@ class Perturbations{
     // Splines of source functions (ST for temperature; SE for polarization)
     Spline2D ST_spline{"ST_spline"};
     Spline2D SE_spline{"SE_spline"};
+  
+    // Spline of the contributions to the source function (SW, ISW, Doppler, Polarization)
+    Spline2D Source_SW_spline{"Source_SW_spline"};
+    Spline2D Source_ISW_spline{"Source_ISW_spline"};
+    Spline2D Source_Doppler_spline{"Source_Doppler_spline"};
+    Spline2D Source_Polarization_spline{"Source_Polarization_spline"};
+
+
     
     // Splines of mulipole quantities
     // NB: If you use there you have to allocate the container first
@@ -147,6 +155,10 @@ class Perturbations{
     double get_Theta_p(const double x, const double k, const int ell) const;
     double get_Nu(const double x, const double k, const int ell) const;
     double get_Source_T(const double x, const double k) const;
+    double get_Source_SW_contribution(const double x, const double k) const;
+    double get_Source_ISW_contribution(const double x, const double k) const;
+    double get_Source_Doppler_contribution(const double x, const double k) const;
+    double get_Source_Polarization_contribution(const double x, const double k) const;
     double get_Source_E(const double x, const double k) const;
 };
 

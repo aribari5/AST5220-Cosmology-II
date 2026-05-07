@@ -115,8 +115,16 @@ class PowerSpectrum {
     double get_cell_TE(const double ell) const;
     double get_cell_EE(const double ell) const;
 
+    const std::vector<Spline>& get_thetaT_ell_of_k_spline() const;  
+    
     // Output Cells in units of l(l+1)/2pi (muK)^2
     void output(std::string filename) const;
+
+    // Output P(k) in units of (Mpc)^3 for x = 0
+    void output_pk(std::string filename) const;
+
+    // Output Theta_ell(k) in units of sqrt{l(l+1)} for all ells and k
+    void output_Theta_ells(std::string filename, std::vector<Spline> Theta_spline) const;
 };
 
 #endif

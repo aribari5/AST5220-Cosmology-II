@@ -25,7 +25,7 @@ int main(int argc, char **argv){
 
   // Power-spectrum parameters
   double A_s         = 2.1e-9;
-  double n_s         = 1.0;//0.965;
+  double n_s         = 0.965;
   double kpivot_mpc  = 0.05;
 
   //=========================================================================
@@ -90,9 +90,12 @@ int main(int argc, char **argv){
   PowerSpectrum power(&cosmo, &rec, &pert, A_s, n_s, kpivot_mpc);
   power.solve();
   power.output("cells.txt");
+  power.output_pk("powerspectrum.txt");
+  power.output_Theta_ells("Theta_ell_of_k.txt", power.get_thetaT_ell_of_k_spline());
   
   // Remove when module is completed
   // return 0;
 
   Utils::EndTiming("Everything");
 }
+

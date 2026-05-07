@@ -75,10 +75,10 @@ void Perturbations::integrate_perturbations(){
     int idx_end        = tc_pair.second;
 
     // debugging
-    if (k > 0.001) {   //i want to check for large k
-    std::cout << "k = " << k << "   x_end_tight = " << x_end_tight 
-              << "   idx_end = " << idx_end << std::endl;
-}
+//     if (k > 0.001) {   //i want to check for large k
+//     std::cout << "k = " << k << "   x_end_tight = " << x_end_tight 
+//               << "   idx_end = " << idx_end << std::endl;
+// }
     //===================================================================
     // Tight coupling integration
     //===================================================================
@@ -109,8 +109,8 @@ void Perturbations::integrate_perturbations(){
     solver_tc.solve(dydx_tight_coupling, x_tc, y_tight_coupling_ini, gsl_odeiv2_step_rk4);
 
     // debugging
-    std::cout << "k = " << k << "   x_end_tight = " << x_end_tight 
-          << "   idx_end = " << idx_end << std::endl;
+    // std::cout << "k = " << k << "   x_end_tight = " << x_end_tight 
+    //       << "   idx_end = " << idx_end << std::endl;
 
     
     //debugging
@@ -153,9 +153,9 @@ void Perturbations::integrate_perturbations(){
     solver_full.solve(dydx_full, x_full, y_full_ini, gsl_odeiv2_step_rk4);
 
     // debugging
-    std::cout << "For k=" << k << " transition at x=" << x_end_tight << " idx_end=" << idx_end << std::endl;
-    std::cout << "TC v_b last = " << solver_tc.get_data_by_component(Constants.ind_vb_tc).back() << std::endl;
-    std::cout << "Full v_b first = " << solver_full.get_data_by_component(Constants.ind_vb)[0] << std::endl;
+    // std::cout << "For k=" << k << " transition at x=" << x_end_tight << " idx_end=" << idx_end << std::endl;
+    // std::cout << "TC v_b last = " << solver_tc.get_data_by_component(Constants.ind_vb_tc).back() << std::endl;
+    // std::cout << "Full v_b first = " << solver_full.get_data_by_component(Constants.ind_vb)[0] << std::endl;
    
     // ===================================================================
     // TODO: remember to store the data found from integrating so we can
@@ -528,6 +528,12 @@ void Perturbations::compute_source_functions(bool SW, bool ISW, bool Doppler, bo
 
   // Make storage for the source functions (in 1D array to be able to pass it to the spline)
   Vector ST_array(k_array.size() * x_array.size());
+
+  Vector SW_term_array(k_array.size() * x_array.size());
+  Vector ISW_term_array(k_array.size() * x_array.size());
+  Vector Doppler_term_array(k_array.size() * x_array.size());
+  Vector Polarization_term_array(k_array.size() * x_array.size());
+
   Vector SE_array(k_array.size() * x_array.size());
 
   // Compute source functions
@@ -571,7 +577,7 @@ void Perturbations::compute_source_functions(bool SW, bool ISW, bool Doppler, bo
 
 
 
-      double SW_term              = SW            ? g_tilde//*(Theta0 + Psi + Pi/4.0)
+      double SW_term              = SW            ? g_tilde*(Theta0 + Psi + Pi/4.0)
                                                   : 0.0;   
       double ISW_term             = ISW           ? exp(-tau) * (dPsidx - dPhidx )
                                                   : 0.0;      
@@ -590,6 +596,15 @@ void Perturbations::compute_source_functions(bool SW, bool ISW, bool Doppler, bo
       // Temperature source
       ST_array[index] = SW_term + ISW_term + Doppler_term + Polarization_term;
 
+
+      // Contribution from different terms
+
+      SW_term_array[index]            = SW_term;
+      ISW_term_array[index]           = ISW_term;
+      Doppler_term_array[index]       = Doppler_term;
+      Polarization_term_array[index]  = Polarization_term;
+
+
       // Polarization source
       if(Constants.polarization){
         SE_array[index] = 0.0; // 0 for now, no polarization
@@ -599,6 +614,13 @@ void Perturbations::compute_source_functions(bool SW, bool ISW, bool Doppler, bo
 
   // Spline the source functions
   ST_spline.create (x_array, k_array, ST_array, "Source_Temp_x_k");
+
+  // contributions
+  Source_SW_spline.create(x_array, k_array, SW_term_array, "SW_contribution_x_k");
+  Source_ISW_spline.create(x_array, k_array, ISW_term_array, "ISW_contribution_x_k");
+  Source_Doppler_spline.create(x_array, k_array, Doppler_term_array, "Doppler_contribution_x_k");
+  Source_Polarization_spline.create(x_array, k_array, Polarization_term_array, "Polarization_contribution_x_k");
+
   if(Constants.polarization){
     SE_spline.create (x_array, k_array, SE_array, "Source_Pol_x_k");
   }
@@ -924,6 +946,18 @@ double Perturbations::get_ddPiddx(const double x, const double k) const{
 double Perturbations::get_Source_T(const double x, const double k) const{
   return ST_spline(x,k);
 }
+double Perturbations::get_Source_SW_contribution(const double x, const double k) const{
+  return Source_SW_spline(x,k);
+}
+double Perturbations::get_Source_ISW_contribution(const double x, const double k) const{
+  return Source_ISW_spline(x,k);
+}
+double Perturbations::get_Source_Doppler_contribution(const double x, const double k) const{
+  return Source_Doppler_spline(x,k);
+}
+double Perturbations::get_Source_Polarization_contribution(const double x, const double k) const{
+  return Source_Polarization_spline(x,k);
+}
 double Perturbations::get_Source_E(const double x, const double k) const{
   return SE_spline(x,k);
 }
@@ -1003,23 +1037,28 @@ void Perturbations::output(const double k, const std::string filename) const{
   auto x_array = Utils::linspace(x_start, x_end, npts);
   auto print_data = [&] (const double x) {
     double arg = k * (cosmo->eta_of_x(0.0) - cosmo->eta_of_x(x));
-    fp << x                     << " ";
-    fp << get_Theta(x,k,0)      << " ";
-    fp << get_Theta(x,k,1)      << " ";
-    fp << get_Theta(x,k,2)      << " ";
-    fp << get_Phi(x,k)          << " ";
-    fp << get_Psi(x,k)          << " ";
-    fp << get_Pi(x,k)           << " ";
-    fp << get_delta_cdm(x,k)    << " ";
-    fp << get_delta_b(x,k)      << " ";
-    fp << get_v_cdm(x,k)        << " ";
-    fp << get_v_b(x,k)          << " ";
-    fp << get_Source_T(x,k)     << " ";
-    fp << get_Source_T(x,k) * Utils::j_ell(5,   arg)           << " ";
-    fp << get_Source_T(x,k) * Utils::j_ell(50,  arg)           << " ";
-    fp << get_Source_T(x,k) * Utils::j_ell(500, arg)           << " ";
+    fp << x                     << " ";                                   // 0
+    fp << get_Theta(x,k,0)      << " ";                                   // 1
+    fp << get_Theta(x,k,1)      << " ";                                   // 2
+    fp << get_Theta(x,k,2)      << " ";                                   // 3
+    fp << get_Phi(x,k)          << " ";                                   // 4
+    fp << get_Psi(x,k)          << " ";                                   // 5
+    fp << get_Pi(x,k)           << " ";                                   // 6
+    fp << get_delta_cdm(x,k)    << " ";                                   // 7
+    fp << get_delta_b(x,k)      << " ";                                   // 8
+    fp << get_v_cdm(x,k)        << " ";                                   // 9
+    fp << get_v_b(x,k)          << " ";                                   // 10
+    fp << get_Source_T(x,k)     << " ";                                   // 11
+    fp << get_Source_T(x,k) * Utils::j_ell(5,   arg)           << " ";    // 12
+    fp << get_Source_T(x,k) * Utils::j_ell(50,  arg)           << " ";    // 13
+    fp << get_Source_T(x,k) * Utils::j_ell(500, arg)           << " ";    // 14
+    // fp << get_Source_SW_contribution(x,k)           << " ";               // 15
+    // fp << get_Source_ISW_contribution(x,k)          << " ";               // 16
+    // fp << get_Source_Doppler_contribution(x,k)      << " ";               // 17
+    // fp << get_Source_Polarization_contribution(x,k) << " ";               // 18
     fp << "\n";
   };
   std::for_each(x_array.begin(), x_array.end(), print_data);
 }
 
+// void Perturbation::output_source(const double k, std::string(filename)){}
