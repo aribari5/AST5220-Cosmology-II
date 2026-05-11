@@ -23,7 +23,6 @@ void Perturbations::solve(){
   // Compute source functions and spline the result. Note: (SW, ISW, Doppler, Polarization)
   compute_source_functions(true,true,true,true);
 
-  // change name of output_pk file when running w diff terms on/off such that the results are not overwritten and saved.
 }
 
 //====================================================
@@ -591,7 +590,7 @@ void Perturbations::compute_source_functions(bool SW, bool ISW, bool Doppler, bo
                                                     (ddHpddx*g_tilde*Pi + dHpdx*dgdx_tilde_of_x*Pi + dHpdx*g_tilde*dPidx)
                                                   + (dHpdx*dgdx_tilde_of_x*Pi + Hp*ddgddx_tilde_of_x*Pi + Hp*dgdx_tilde_of_x*dPidx)
                                                   + (dHpdx*g_tilde*dPidx + Hp*dgdx_tilde_of_x*dPidx +Hp*g_tilde*ddPiddx)
-                                                  )
+                                                    )
                                                   )
                                                   : 0.0;                                                  
 
@@ -1054,10 +1053,6 @@ void Perturbations::output(const double k, const std::string filename) const{
     fp << get_Source_T(x,k) * Utils::j_ell(5,   arg)           << " ";    // 12
     fp << get_Source_T(x,k) * Utils::j_ell(50,  arg)           << " ";    // 13
     fp << get_Source_T(x,k) * Utils::j_ell(500, arg)           << " ";    // 14
-    // fp << get_Source_SW_contribution(x,k)           << " ";               // 15
-    // fp << get_Source_ISW_contribution(x,k)          << " ";               // 16
-    // fp << get_Source_Doppler_contribution(x,k)      << " ";               // 17
-    // fp << get_Source_Polarization_contribution(x,k) << " ";               // 18
     fp << "\n";
   };
   std::for_each(x_array.begin(), x_array.end(), print_data);

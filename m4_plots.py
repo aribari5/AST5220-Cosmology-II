@@ -114,38 +114,47 @@ def plot_Pk():
     plt.tight_layout()
     plt.show()
 
-"""
-def plot_Source_function():
+def plot_Cell_contributions():
 
-    data = np.loadtxt("perturbations_k.01.txt")
+    # load the full data
+    data                = np.loadtxt("cells.txt")
 
-    x                                       = data[:, 0]
+    # contributions
+    data_SW             = np.loadtxt("cells_SW.txt")
+    data_ISW            = np.loadtxt("cells_ISW.txt")
+    data_Doppler        = np.loadtxt("cells_Doppler.txt")
+    data_Polarization   = np.loadtxt("cells_Polarization.txt")
 
-    Source_func_full                        = data[:,11]
-    Source_func_j_ell_5                     = data[:,12]
-    Source_func_j_ell_50                    = data[:,13]
-    Source_func_j_ell_500                   = data[:,14]
+    sources = ["SW", "ISW", "Doppler", "Polarization"]
 
-    Source_func_SW_contribution             = data[:,15]
-    Source_func_ISW_contribution            = data[:,16]
-    Source_func_Doppler_contribution        = data[:,17]
-    Source_func_Polarization_contribution   = data[:,18]
+    ell  = data[:, 0]
+
+    Cell_full                       = data[:,1]
+    Cell_SW_contribution            = data_SW[:,1]
+    Cell_ISW_contribution           = data_ISW[:,1]
+    Cell_Doppler_contribution       = data_Doppler[:,1]
+    Cell_Polarization_contribution  = data_Polarization[:,1]
+
+
+
     
     plt.figure()
 
-    plt.plot(x, Source_func_full, label=r"$S(k,x)$",ls='solid',color="black")
-    plt.plot(x, Source_func_SW_contribution, label=r"SW",ls='dashed',color="blue")
-    plt.plot(x, Source_func_ISW_contribution, label=r"ISW",ls='dashed',color="red")
-    plt.plot(x, Source_func_Doppler_contribution, label=r"Doppler",ls='dashed',color="green")
-    plt.plot(x, Source_func_Polarization_contribution, label=r"Polarization",ls='dashed',color="orange")
+    plt.plot(ell, Cell_full, label=r"$S(k,x)$",ls='solid',color="black")
+    plt.plot(ell, Cell_SW_contribution, label=r"SW",ls='dashed',color="orange")
+    plt.plot(ell, Cell_ISW_contribution, label=r"ISW",ls='dashed',color="green")
+    plt.plot(ell, Cell_Doppler_contribution, label=r"Doppler",ls='dashed',color="blue")
+    plt.plot(ell, Cell_Polarization_contribution, label=r"Polarization",ls='dashed',color="red")
     plt.xscale("log")
     plt.yscale("log")
-    plt.xlabel(r"$x\?$")
-    plt.title(r"Source Function Contributions for $k=0.01/Mpc$")
+    plt.xlabel(r"$\ell$")
+    plt.ylabel(r"$\frac{\ell(\ell+1)}{2\pi}C_\ell^{TT}\left[\mu K^2\right]$")
+    plt.title(r"$k=0.01/Mpc$")
+    plt.ylim(10**(-2.3),1e4)
+    plt.xlim(2,2000)
     plt.legend()
     plt.tight_layout()
     plt.show()
-"""
 
 def plot_Theta_ells():
 
@@ -253,8 +262,8 @@ def plot_compare_to_Planck_data():
 if __name__ == "__main__":
     plot_style()
     # plot_Cell()
-    plot_Pk()
+    plot_Cell_contributions()
+    # plot_Pk()
     # plot_Theta_ells()
     # plot_integrand_Theta_ells()
     # plot_compare_to_Planck_data()
-    # plot_Source_function()
