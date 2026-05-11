@@ -21,7 +21,9 @@ void Perturbations::solve(){
   integrate_perturbations();
 
   // Compute source functions and spline the result. Note: (SW, ISW, Doppler, Polarization)
-  compute_source_functions(true,false,false,false);
+  compute_source_functions(true,true,true,true);
+
+  // change name of output_pk file when running w diff terms on/off such that the results are not overwritten and saved.
 }
 
 //====================================================

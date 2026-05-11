@@ -80,6 +80,9 @@ int main(int argc, char **argv){
   pert.output(k_intermdeiate, "perturbations_k0.01.txt");
   pert.output(k_large, "perturbations_k0.1.txt");
 
+
+  // Run w different terms on off new name files
+
   // Remove when module is completed
   // return 0;
   

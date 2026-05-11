@@ -563,9 +563,11 @@ void RecombinationHistory::info() const{
   std::cout << "Sound horizon at recombination (Saha) (x = x_Xe_half_saha)        ="<< sound_horizon_of_x(x_Xe_half_saha) / Constants.Mpc << " Mpc\n";
 
     
+  std::cout << "---------------------------------\n";
 
-
-
+  std::cout << "k at M-R equality (for Milestone IV):\n";
+  std::cout << "k_eq = Omega_R/Omega_M * H_eq/c \n";
+  std::cout << "k_eq = " << (cosmo->Hp_of_x( std::log(cosmo->get_OmegaR(0.0)/cosmo->get_OmegaM(0.0)) )/Constants.c)*Constants.Mpc/0.67 << "\n";
 
 
 
