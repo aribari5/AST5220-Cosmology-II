@@ -131,9 +131,12 @@ Vector2D PowerSpectrum::line_of_sight_integration_single(
       double eta        = cosmo->eta_of_x(x);
       double S_tilde    = source_function(x, k);
 
+      double arg = k * (eta0 - eta);
+
+
       for(size_t ell = 0; ell < ells.size(); ell++){
 
-        double j_ell = j_ell_splines[ell](k*(eta0 - eta));
+        double j_ell = j_ell_splines[ell](arg);
         
         // Trapezoidal rule:  multiply 0.5 at the boundaries
         if (ix == 0 || ix == x_array.size() - 1)
@@ -365,7 +368,7 @@ void PowerSpectrum::output_pk(std::string filename) const{
 
   auto print_data     = [&] (const double k) {
     
-    double k_hmpc     = k*(Constants.Mpc *h);
+    double k_hmpc     = k*(Constants.Mpc /h);
     double P_k_matter = get_matter_power_spectrum(0.0, k)/pow(Constants.Mpc * h, 3);
 
     fp << k_hmpc      << " ";
@@ -381,8 +384,10 @@ void PowerSpectrum::output_Theta_ells(std::string filename, std::vector<Spline> 
   // So each row corresponds to a different k value, 
   // and the columns correspond to the different ells.
 
+  double eta0 = cosmo->eta_of_x(0.0);
+
   std::ofstream fp(filename.c_str());
-  fp << 0.0 << " ";
+  fp << eta0 << " ";    // the first value can be whatever we want. I use eta0 to extract it in the .py file, using the same eta0 as in the .cpp files
 
   for (int i = 0; i < ells.size(); i++){
       int ell = ells[i];
@@ -392,7 +397,7 @@ void PowerSpectrum::output_Theta_ells(std::string filename, std::vector<Spline> 
 
   auto k_array = exp(Utils::linspace(log(Constants.k_min), log(Constants.k_max), 2000));
   auto print_data = [&] (const double k) {
-    fp << k * Constants.Mpc * cosmo->eta_of_x(0.0)<< " ";
+    fp << k  * eta0 << " ";
     for (int i = 0; i < ells.size(); i++){
       fp << Theta_spline[i](k) << " ";
     }

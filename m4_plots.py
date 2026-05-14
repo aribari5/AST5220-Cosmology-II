@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
-
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 
 
 def plot_style():
@@ -57,14 +57,16 @@ def load_power_spectrum_data(filename):
 
 def load_Theta_ell_data(filename):
     # Load the data from Theta_ell_of_k.txt
-    # k 0
+    
     data            = np.loadtxt(filename)
 
     file_ells       = data[0, 1:].astype(int)
+    eta0            = data[0, 0]
     k               = data[1:,0]
     Theta_ell_of_k  = data[1:,1:]
 
-    return k,file_ells, Theta_ell_of_k
+    
+    return k, file_ells, Theta_ell_of_k, eta0
 
 def load_low_ell_TT_data(filename):
     # Load the data from planck_cell_low.txt
@@ -100,10 +102,10 @@ def plot_Pk():
     k, Pk = load_power_spectrum_data("powerspectrum.txt")
     
     # see final output from RecombinationHistory.cpp
-    k_eq = 0.0201474           
+    k_eq = 0.0201474
     plt.figure()
 
-    plt.vlines(k_eq,ymin=1e2,ymax=1e5, colors="green", linestyles="dashed", label=r"$k_{eq}$")
+    plt.vlines(k_eq,ymin=0,ymax=1e5, colors="green", linestyles="dashed", label=r"$k_{eq}$")
 
     plt.plot(k, Pk, label=r"$P(k)$", color="red")
     plt.xscale("log")
@@ -140,7 +142,7 @@ def plot_Cell_contributions():
     
     plt.figure()
 
-    plt.plot(ell, Cell_full, label=r"$S(k,x)$",ls='solid',color="black")
+    plt.plot(ell, Cell_full, label=r"Full spectrum",ls='solid',color="black")
     plt.plot(ell, Cell_SW_contribution, label=r"SW",ls='dashed',color="orange")
     plt.plot(ell, Cell_ISW_contribution, label=r"ISW",ls='dashed',color="green")
     plt.plot(ell, Cell_Doppler_contribution, label=r"Doppler",ls='dashed',color="blue")
@@ -159,7 +161,7 @@ def plot_Cell_contributions():
 def plot_Theta_ells():
 
     ells = [15, 100, 500, 1000, 1500, 2000] 
-    k_eta0, file_ells, transfer_ell = load_Theta_ell_data("Theta_ell_of_k.txt")
+    k_eta0, file_ells, transfer_ell, eta0 = load_Theta_ell_data("Theta_ell_of_k.txt")
 
     
     colors = ["#BF1A2F", "#F0A202", "#F4E285", "#98CE00", "#16E0BD", "#759EB8"]
@@ -186,7 +188,7 @@ def plot_Theta_ells():
 
 def plot_integrand_Theta_ells():
     ells = [15, 100, 500, 1000, 1500, 2000] 
-    k,file_ells, transfer_ell = load_Theta_ell_data("Theta_ell_of_k.txt")
+    k,file_ells, transfer_ell, eta0 = load_Theta_ell_data("Theta_ell_of_k.txt")
 
 
     
@@ -209,7 +211,7 @@ def plot_integrand_Theta_ells():
         normfactor = ell*(ell+1)
         abs_squared_Theta = np.abs(transfer_ell[:,column_idx])**2
 
-        y_values = normfactor*abs_squared_Theta/k
+        y_values = normfactor*abs_squared_Theta/(k/eta0)
 
         
         
@@ -250,20 +252,13 @@ def plot_compare_to_Planck_data():
     plt.tight_layout()
     plt.show()
 
-    
-
-    
-
-
-
-
 ### calling the plots ###
 
 if __name__ == "__main__":
     plot_style()
     # plot_Cell()
-    plot_Cell_contributions()
+    # plot_Cell_contributions()
     # plot_Pk()
     # plot_Theta_ells()
-    # plot_integrand_Theta_ells()
+    # plot_integrand_Theta_ells() 
     # plot_compare_to_Planck_data()
