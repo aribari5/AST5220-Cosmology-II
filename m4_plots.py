@@ -105,15 +105,18 @@ def plot_Pk():
     k_eq = 0.0201474
     plt.figure()
 
+    plt.plot(k, Pk, label=r"$P(k)$", color="black")
+
     plt.vlines(k_eq,ymin=0,ymax=1e5, colors="green", linestyles="dashed", label=r"$k_{eq}$")
 
-    plt.plot(k, Pk, label=r"$P(k)$", color="red")
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel(r"$k [h/Mpc^{-1}$]")
     plt.ylabel(r"$P(0,k) [Mpc^3/h^3]$")
-    plt.legend()
+    plt.legend(loc="upper left")
     plt.tight_layout()
+
+    plt.savefig("figures/Pk.pdf")
     plt.show()
 
 def plot_Cell_contributions():
@@ -143,10 +146,10 @@ def plot_Cell_contributions():
     plt.figure()
 
     plt.plot(ell, Cell_full, label=r"Full spectrum",ls='solid',color="black")
-    plt.plot(ell, Cell_SW_contribution, label=r"SW",ls='dashed',color="orange")
-    plt.plot(ell, Cell_ISW_contribution, label=r"ISW",ls='dashed',color="green")
-    plt.plot(ell, Cell_Doppler_contribution, label=r"Doppler",ls='dashed',color="blue")
-    plt.plot(ell, Cell_Polarization_contribution, label=r"Polarization",ls='dashed',color="red")
+    plt.plot(ell, Cell_Doppler_contribution, label=r"Doppler",ls='dashed')
+    plt.plot(ell, Cell_SW_contribution, label=r"SW",ls='dashed')
+    plt.plot(ell, Cell_ISW_contribution, label=r"ISW",ls='dashed')
+    plt.plot(ell, Cell_Polarization_contribution, label=r"Polarization",ls='dashed')
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel(r"$\ell$")
@@ -156,6 +159,8 @@ def plot_Cell_contributions():
     plt.xlim(2,2000)
     plt.legend()
     plt.tight_layout()
+
+    plt.savefig("figures/Cell_contributions.pdf")
     plt.show()
 
 def plot_Theta_ells():
@@ -184,6 +189,8 @@ def plot_Theta_ells():
     plt.xlabel(r"$k\eta_0$")
     plt.ylabel(r"$\sqrt{\ell(\ell+1)}\,\Theta_\ell(k)$")
     plt.legend()
+    
+    plt.savefig("figures/Transfer_Theta_ell_of_k.pdf")
     plt.show()
 
 def plot_integrand_Theta_ells():
@@ -223,6 +230,9 @@ def plot_integrand_Theta_ells():
     
         plt.legend()
     plt.tight_layout()
+
+    plt.savefig("figures/Integrand_Theta_ell_of_k.pdf")
+    print(f"Still wrong y axis")
     plt.show()
 
 
@@ -240,16 +250,18 @@ def plot_compare_to_Planck_data():
     
 
     plt.figure()
-    plt.semilogx(ell_fiducial, Cell_fiducial, label=r"Fiducial $C_\ell^{TT}$", color="blue")
-    plt.errorbar(ell_planck, Cell_planck, yerr=[err_up_planck, err_down_planck], fmt='x', label=r"Planck 2018 Data", color="red", ecolor="gray", capsize=3)
+    plt.semilogx(ell_fiducial, Cell_fiducial, label=r"$C_\ell^{TT}$", color="red")
+    plt.errorbar(ell_planck, Cell_planck, yerr=[err_up_planck, err_down_planck], fmt='x', label=r"Planck 2018 Data", color="black", ecolor="gray", capsize=3)
 
    
     plt.xlabel(r"Multipole $\ell$")
     plt.ylabel(r"$\frac{\ell(\ell+1)}{2\pi}C_\ell^{TT}\left[\mu K^2\right]$")
 
     plt.xlim(2,10**(3.3))
-    plt.legend()
+    plt.legend(loc="upper left")
     plt.tight_layout()
+
+    plt.savefig("figures/Compare_to_Planck.pdf")
     plt.show()
 
 ### calling the plots ###
@@ -257,8 +269,8 @@ def plot_compare_to_Planck_data():
 if __name__ == "__main__":
     plot_style()
     # plot_Cell()
+    # plot_Theta_ells()
+    plot_integrand_Theta_ells() 
     # plot_Cell_contributions()
     # plot_Pk()
-    # plot_Theta_ells()
-    # plot_integrand_Theta_ells() 
     # plot_compare_to_Planck_data()

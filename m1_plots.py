@@ -212,12 +212,27 @@ def plot_luminosity_distance(filename):
         color='blue',
     )
 
-    plt.semilogx(
+    plt.plot(
         z_model,
         dL_model_Gpc/z_model,
         label="Fiducial model",
         color="red")
     
+    ## best fit
+    # We can also calculate the best fit model's d_L(z) using the background data, since we have the best fit parameters from the MCMC.
+    # We can identify the best fit model's d_L(z) from the background data by finding the index where the background parameters are closest to the best fit parameters from the MCMC.
+    
+
+    dL_best_fit_SI = cosmo_data[best_fit_index,11]  # in m
+    dL_best_fit_Gpc = dL_best_fit_SI / (1e9*sp.constants.parsec)  # in Gpc
+
+    plt.plot(
+        z_model,
+        dL_best_fit_Gpc/z_model,
+        label="Best fit model from MCMC",
+        color="green",
+        linestyle='solid'
+    )
 
     plt.xlabel(r"$z$")
     plt.ylabel(r"$d_L(z)/z$ [Gpc]")
@@ -648,7 +663,7 @@ if __name__ == "__main__":
 
     # plot_eta_of_x("cosmology.txt") 
     # plot_t_of_x("cosmology.txt")
-    # plot_luminosity_distance("data/supernovadata.txt") 
+    plot_luminosity_distance("data/supernovadata.txt") 
     # plot_dHpdx_over_Hp("cosmology.txt") 
     # plot_ddHpddx_over_Hp("cosmology.txt")  
     # plot_etaHp_over_c("cosmology.txt") 

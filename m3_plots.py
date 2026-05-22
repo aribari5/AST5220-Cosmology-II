@@ -4,6 +4,7 @@ import scipy as sp
 
 
 
+
 def plot_style():
 
     # Set the style preferences:
@@ -98,6 +99,7 @@ def plot_delta_gamma_cdm_b():
     plt.ylabel(r'Perturbation Amplitude')
     plt.ylim(1e-1,1e5)
 
+    plt.savefig("figures/delta_gamma_cdm_b.pdf")
     plt.show()
 
 def plot_v_gamma_cdm_b():
@@ -138,6 +140,7 @@ def plot_v_gamma_cdm_b():
     plt.ylabel(r'Perturbation Amplitude')
     plt.ylim(1e-6,1e2)
 
+    plt.savefig("figures/v_gamma_cdm_b.pdf")
     plt.show()
 
 
@@ -179,17 +182,53 @@ def plot_Theta0_Theta1():
 
 
 
-    k_val_legend = plt.legend(loc='upper left')
-    plt.gca().add_artist(k_val_legend)
+    # k_val_legend = plt.legend(loc='upper left')
+    # plt.gca().add_artist(k_val_legend)
 
-    linestyle_legend_handles = [
-        plt.Line2D([0], [0], color='black', linestyle=ls, label=label)
-        for ls, label in linestyles.items()
-    ]
-    plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
+    # linestyle_legend_handles = [
+    #     plt.Line2D([0], [0], color='black', linestyle=ls, label=label)
+    #     for ls, label in linestyles.items()
+    # ]
+    # plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
 
     plt.tight_layout()
+
+    plt.savefig("figures/Theta0_Theta1.pdf")
     plt.show()
+
+def plot_Theta2():
+    k_values     = [0.1, 0.01, 0.001]
+    k_val_colors = ['green', 'red', 'blue']
+
+    plt.figure()
+
+
+    for k in k_values:
+        
+        file_path = f"./perturbations_k{k}.txt"
+        x,Theta0,Theta1,Theta2,Phi,Psi,Pi,delta_cdm,delta_b,v_cdm,v_b,Source_T,Source_T_j_ell_5,Source_T_j_ell_50,Source_T_j_ell_500 = load_perturbation_data(file_path)
+        
+
+        colour = k_val_colors[k_values.index(k)]
+       
+        plt.plot(x, Theta2, ls = 'solid',color=colour, label = f'$k={k}/Mpc$')
+
+    k_val_legend = plt.legend(loc='lower left')
+    plt.gca().add_artist(k_val_legend)
+
+    # linestyle_legend_handles = [
+    #     plt.Line2D([0], [0], color='black', linestyle='solid', label=r"$\Theta_2$")
+    # ]
+    # plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
+
+    plt.xlabel(r'$x=\ln a$')
+    plt.ylabel(r'$\Theta_2$')
+    # plt.ylim(0.1,0.8)
+    plt.legend(loc='upper left')
+
+    plt.savefig("figures/Theta2.pdf")
+    plt.show()
+
 
 def plot_Phi():
     k_values     = [0.1, 0.01, 0.001]
@@ -211,25 +250,26 @@ def plot_Phi():
     k_val_legend = plt.legend(loc='lower left')
     plt.gca().add_artist(k_val_legend)
 
-    linestyle_legend_handles = [
-        plt.Line2D([0], [0], color='black', linestyle='solid', label=r"$\Phi$")
-    ]
-    plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
+    # linestyle_legend_handles = [
+    #     plt.Line2D([0], [0], color='black', linestyle='solid', label=r"$\Phi$")
+    # ]
+    # plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
 
     plt.xlabel(r'$x=\ln a$')
-    plt.ylabel(r'Perturbation Amplitude')
+    plt.ylabel(r'$\Phi$')
     # plt.ylim(0.1,0.8)
 
+    plt.savefig("figures/Phi.pdf")
     plt.show()
 
 
-def plot_Phi_PhiplusPsi():
+def plot_Phi_plus_Psi():
 
     k_values     = [0.1, 0.01, 0.001]
     k_val_colors = ['green', 'red', 'blue']
 
-    linestyles   = {'solid': r'$\Theta_0$',
-                    'solid' : r'$\Theta_1$'}
+    linestyles   = {'solid': r'$\Phi$',
+                    'solid' : r'$\Psi$'}
 
     
     
@@ -249,39 +289,36 @@ def plot_Phi_PhiplusPsi():
         ax1.set_ylabel(r'$\Phi$')
         ax1.legend(loc='upper left')
 
-        ax1.set_ylim(-0.5,1)
+        ax1.set_ylim(-0.25,1)
 
         ax2.plot(x, Phi_plus_Psi, ls = 'solid', color=colour, label = f'$k={k}/Mpc$')
+        # ax2.plot(x, Phi, ls = 'dotted', color='black')
+        # ax2.plot(x, Psi, ls = 'dashed', color='black')
+        # ax2.plot(x, Phi, ls = 'dotted', color=colour, label = f'$\Phi$ at $k={k}/Mpc$')
+        # ax2.plot(x, Psi, ls = 'dashed', color=colour, label = f'$\Psi$ at $k={k}/Mpc$')
         ax2.set_xlabel(r'$x=\ln a$')
         ax2.set_ylabel(r'$\Phi+\Psi$')
         ax2.legend(loc='upper left')
 
-        ax2.set_ylim(-0.4,0.5)
+        # ax2.set_ylim(-0.025,0.025)
 
 
 
 
-
-    # k_val_legend = plt.legend(loc='upper left')
-    # plt.gca().add_artist(k_val_legend)
-
-    # linestyle_legend_handles = [
-    #     plt.Line2D([0], [0], color='black', linestyle=ls, label=label)
-    #     for ls, label in linestyles.items()
-    # ]
-    # plt.legend(handles=linestyle_legend_handles, loc='upper left', bbox_to_anchor=(0, 0.85))
-
+    ax1.legend().remove()
+  
     plt.tight_layout()
+    plt.savefig("figures/Phi_plus_Psi.pdf")
     plt.show()
-
 
 
 
 
 if __name__ == "__main__":
     plot_style()
-    plot_delta_gamma_cdm_b()
-    plot_v_gamma_cdm_b()
+    # plot_delta_gamma_cdm_b()
+    # plot_v_gamma_cdm_b()
     plot_Theta0_Theta1()
+    # plot_Theta2()
     plot_Phi()
-    plot_Phi_PhiplusPsi()
+    plot_Phi_plus_Psi()
