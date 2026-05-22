@@ -223,16 +223,16 @@ def plot_luminosity_distance(filename):
     # We can identify the best fit model's d_L(z) from the background data by finding the index where the background parameters are closest to the best fit parameters from the MCMC.
     
 
-    dL_best_fit_SI = cosmo_data[best_fit_index,11]  # in m
-    dL_best_fit_Gpc = dL_best_fit_SI / (1e9*sp.constants.parsec)  # in Gpc
+    # dL_best_fit_SI = cosmo_data[best_fit_index,11]  # in m
+    # dL_best_fit_Gpc = dL_best_fit_SI / (1e9*sp.constants.parsec)  # in Gpc
 
-    plt.plot(
-        z_model,
-        dL_best_fit_Gpc/z_model,
-        label="Best fit model from MCMC",
-        color="green",
-        linestyle='solid'
-    )
+    # plt.plot(
+    #     z_model,
+    #     dL_best_fit_Gpc/z_model,
+    #     label="Best fit model from MCMC",
+    #     color="green",
+    #     linestyle='solid'
+    # )
 
     plt.xlabel(r"$z$")
     plt.ylabel(r"$d_L(z)/z$ [Gpc]")
@@ -509,31 +509,62 @@ def plot_mcmc_scatterplot():
     # Calculate Omega_Lambda from the flatness condition
     Omega_Lambda = 1 - Omega_M - Omega_K
 
+    
+    # Empty lists get appended with the parameters that are within the:
 
-    # Empty lists get appended with the parameters that are within the 1-sigma
-    one_sigma_Omega_M = []
-    one_sigma_Omega_Lambda = []
-    # Empty lists get appended with the parameters that are within the 2-sigma (i.e. 2sig-1sig region)
-    two_sigma_Omega_M = []
-    two_sigma_Omega_Lambda = []
+    zero_point_two_sigma_Omega_M        = []            # 0.2-sigma
+    zero_point_two_sigma_Omega_Lambda   = []            # 0.2-sigma
+
+
+    half_sigma_Omega_M                  = []            # 0.5-sigma                         
+    half_sigma_Omega_Lambda             = []            # 0.5-sigma
+
+    one_sigma_Omega_M                   = []            # 1.0-sigma
+    one_sigma_Omega_Lambda              = []            # 1.0-sigma
+    
+    two_sigma_Omega_M                   = []            # 2.0-sigma
+    two_sigma_Omega_Lambda              = []            # 2.0-sigma
 
     for i in range(len(chi2)):
-        if chi2[i] <= min_chi2 + 3.53: 
+
+        delta_chi2 = chi2[i] - min_chi2
+
+        if delta_chi2 <= 0.16:
+            zero_point_two_sigma_Omega_M.append(Omega_M[i])
+            zero_point_two_sigma_Omega_Lambda.append(Omega_Lambda[i])
+            
+
+        elif delta_chi2 <= 0.99: 
+            half_sigma_Omega_M.append(Omega_M[i])
+            half_sigma_Omega_Lambda.append(Omega_Lambda[i])
+    
+        elif chi2[i] <= min_chi2 + 3.53: 
             one_sigma_Omega_M.append(Omega_M[i])
             one_sigma_Omega_Lambda.append(Omega_Lambda[i])
    
         elif min_chi2 + 3.53 < chi2[i] <= min_chi2 + 8.02: 
             two_sigma_Omega_M.append(Omega_M[i])
             two_sigma_Omega_Lambda.append(Omega_Lambda[i])
-    
 
-
-    
 
     # Scatterplot in the Omega_M - Omega_Lambda plane
     plt.figure()
-    plt.scatter(two_sigma_Omega_M, two_sigma_Omega_Lambda, color='purple', alpha=0.5, label=r"2-$\sigma$ region")
-    plt.scatter(one_sigma_Omega_M, one_sigma_Omega_Lambda, color='blue', alpha=0.5, label=r"1-$\sigma$ region")
+
+    # For the main plot:
+
+    # plt.scatter(two_sigma_Omega_M, two_sigma_Omega_Lambda, color='purple', alpha=0.5, label=r"2-$\sigma$ region")
+    # plt.scatter(one_sigma_Omega_M, one_sigma_Omega_Lambda, color='blue', alpha=0.5, label=r"1-$\sigma$ region")
+
+    # For additional sigma regions:
+
+    # colors = ['red', 'orange', 'yellow', 'cyan']
+    colors = ['#002400', '#273B09', '#58641D', '#7B904B']
+    
+    plt.scatter(two_sigma_Omega_M, two_sigma_Omega_Lambda, color=colors[0], alpha=0.5, label=r"2-$\sigma$ region")
+    plt.scatter(one_sigma_Omega_M, one_sigma_Omega_Lambda, color=colors[1], alpha=0.5, label=r"1-$\sigma$ region")
+    plt.scatter(half_sigma_Omega_M, half_sigma_Omega_Lambda, color=colors[2], alpha=0.5, label=r"0.5-$\sigma$ region")
+    plt.scatter(zero_point_two_sigma_Omega_M, zero_point_two_sigma_Omega_Lambda, color=colors[3], alpha=0.5, label=r"0.2-$\sigma$ region")
+
 
     # Add the line corresponding to a flat universe
     Omega_M_flat = np.linspace(0, 1, 100)
@@ -542,7 +573,7 @@ def plot_mcmc_scatterplot():
 
 
     # Add the best fit as a separate square
-    plt.scatter(best_fit_Omega_M, 1 - best_fit_Omega_M - best_fit_Omega_K, color='red', label="Best fit from Planck", zorder=5)
+    plt.scatter(best_fit_Omega_M, 1 - best_fit_Omega_M - best_fit_Omega_K, color='red', label="Best fit from MCMC", zorder=5)
 
     plt.xlabel(r"$\Omega_M$")
     plt.ylabel(r"$\Omega_\Lambda$")
@@ -550,7 +581,7 @@ def plot_mcmc_scatterplot():
     plt.xlim(0, 1)
     plt.ylim(0, 1.5)
     plt.tight_layout()
-    plt.savefig("figures/MCMC_scatterplot.pdf")
+    # plt.savefig("figures/MCMC_scatterplot.pdf")
     plt.show()
 
 def plot_mcmc_Omega_Lambda_posterior():
@@ -592,7 +623,7 @@ def plot_mcmc_Omega_Lambda_posterior():
     plt.axvline(mean_Omega_Lambda, color='red', linestyle='--', label=f"Mean = {mean_Omega_Lambda:.3f}")
     plt.axvline(mean_Omega_Lambda - std_Omega_Lambda, color='red', linestyle=':', label=r"$\pm1$-$\sigma$")
     plt.axvline(mean_Omega_Lambda + std_Omega_Lambda, color='red', linestyle=':')
-    plt.axvline(best_fit_Omega_Lambda, color='black', linestyle='--', label=f"Best fit from Planck = {best_fit_Omega_Lambda:.3f}")
+    plt.axvline(best_fit_Omega_Lambda, color='black', linestyle='--', label=f"Best fit from MCMC = {best_fit_Omega_Lambda:.3f}")
     plt.plot(x, gaussian_fit, color='orange', linestyle='-', label="Gaussian fit to posterior")
 
     plt.xlabel(r"$\Omega_\Lambda$")
@@ -639,7 +670,7 @@ def plot_mcmc_H0():
     plt.axvline(mean_h, color='red', linestyle='--', label=f"Mean={100.0*mean_h:.1f} km/s/Mpc")
     plt.axvline(mean_h - std_h, color='red', linestyle=':', label=r"$\pm1$-$\sigma$")
     plt.axvline(mean_h + std_h, color='red', linestyle=':')
-    plt.axvline(best_fit_h, color='black', linestyle='--', label=f"Best fit from Planck={H0:.1f} km/s/Mpc")
+    plt.axvline(best_fit_h, color='black', linestyle='--', label=f"Best fit from MCMC={H0:.1f} km/s/Mpc")
     plt.plot(x, gaussian_fit, color='orange', linestyle='-', label="Gaussian fit to posterior")
 
     plt.xlabel(r"$h$")
@@ -657,19 +688,19 @@ def plot_mcmc_H0():
 if __name__ == "__main__":
     plot_style()
 
-    calculate_x_radiation_matter_equality()
-    calculate_x_matter_dark_energy_equality()
-    caluclate_x_onset_of_acceleration()
+    # calculate_x_radiation_matter_equality()
+    # calculate_x_matter_dark_energy_equality()
+    # caluclate_x_onset_of_acceleration()
 
     # plot_eta_of_x("cosmology.txt") 
     # plot_t_of_x("cosmology.txt")
-    plot_luminosity_distance("data/supernovadata.txt") 
+    # plot_luminosity_distance("data/supernovadata.txt") 
     # plot_dHpdx_over_Hp("cosmology.txt") 
     # plot_ddHpddx_over_Hp("cosmology.txt")  
     # plot_etaHp_over_c("cosmology.txt") 
     # plot_Hp()  
     # plot_densities()
-    # plot_mcmc_scatterplot()
+    plot_mcmc_scatterplot()
     # plot_mcmc_Omega_Lambda_posterior()
     # plot_mcmc_H0()
 
