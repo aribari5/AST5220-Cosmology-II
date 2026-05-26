@@ -179,9 +179,6 @@ def plot_Theta0_Theta1():
         ax2.set_ylim(-0.4,0.5)
 
 
-
-
-
     # k_val_legend = plt.legend(loc='upper left')
     # plt.gca().add_artist(k_val_legend)
 
@@ -213,8 +210,8 @@ def plot_Theta2():
        
         plt.plot(x, Theta2, ls = 'solid',color=colour, label = f'$k={k}/Mpc$')
 
-    k_val_legend = plt.legend(loc='lower left')
-    plt.gca().add_artist(k_val_legend)
+    # k_val_legend = plt.legend(loc='lower left')
+    # plt.gca().add_artist(k_val_legend)
 
     # linestyle_legend_handles = [
     #     plt.Line2D([0], [0], color='black', linestyle='solid', label=r"$\Theta_2$")
@@ -315,10 +312,10 @@ def plot_Phi_plus_Psi():
 
 
 if __name__ == "__main__":
-    plot_style()
+    # plot_style()
     # plot_delta_gamma_cdm_b()
     # plot_v_gamma_cdm_b()
-    plot_Theta0_Theta1()
+    # plot_Theta0_Theta1()
     # plot_Theta2()
-    plot_Phi()
-    plot_Phi_plus_Psi()
+    # plot_Phi()
+    # plot_Phi_plus_Psi()

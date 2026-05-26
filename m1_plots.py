@@ -106,6 +106,34 @@ def load_mcmc_results():
     Omega_K = data[:,3]
 
     return chi2, h, Omega_M, Omega_K
+
+def load_best_fit_parameters():
+
+
+   # Best fit model from MCMC
+    mcmc_data = load_mcmc_results()
+
+    chi2        = mcmc_data[0]
+    h           = mcmc_data[1]
+    Omega_M     = mcmc_data[2]
+    Omega_K     = mcmc_data[3]
+
+
+    best_fit_index = np.argmin(chi2)
+    best_fit_h = h[best_fit_index]
+    best_fit_Omega_M = Omega_M[best_fit_index]
+    best_fit_Omega_K = Omega_K[best_fit_index]
+    best_fit_Omega_Lambda = 1 - best_fit_Omega_M - best_fit_Omega_K
+    
+    
+    print(f"Best fit values")
+    print(f"h = {best_fit_h:.3f}")
+    print(f"Omega_M = {best_fit_Omega_M:.3f}")
+    print(f"Omega_K = {best_fit_Omega_K:.3f}")
+    print(f"Omega_Lambda = {best_fit_Omega_Lambda:.3f}")
+
+    return best_fit_h, best_fit_Omega_M, best_fit_Omega_K, best_fit_Omega_Lambda
+
         
 #===========================================#
 # Now the functions for the different plots 
@@ -175,29 +203,26 @@ def plot_luminosity_distance(filename):
     dL_model_SI = cosmo_data[:,11]   # in m!
     dL_model_Gpc= dL_model_SI / (1e9*sp.constants.parsec)  #Gpc
 
-    # Best fit model from MCMC
-    mcmc_data = load_mcmc_results()
-
-    chi2        = mcmc_data[0]
-    h           = mcmc_data[1]
-    Omega_M     = mcmc_data[2]
-    Omega_K     = mcmc_data[3]
-
-    best_fit_index = np.argmin(chi2)
-    best_fit_h = h[best_fit_index]
-    best_fit_Omega_M = Omega_M[best_fit_index]
-    best_fit_Omega_K = Omega_K[best_fit_index]
-    best_fit_Omega_Lambda = 1 - best_fit_Omega_M - best_fit_Omega_K
-    
-    
-
-
-
+   
 
 
     # We wish to plot d_L / z (remember the errorbars!):
     dL_over_z = d_L / z
     err_over_z = errorbars / z
+
+    # Best fit model from MCMC
+    data_bestfit = np.loadtxt('cosmology_bestfit.txt', skiprows=1)
+
+
+    x_bestfit           = data_bestfit[:,0]
+    z_model_bestfit     = np.exp(-x_bestfit) - 1
+    dL_model_SI_bestfit = data_bestfit[:,11]   # in m!
+    dL_model_Gpc_bestfit= dL_model_SI_bestfit / (1e9*sp.constants.parsec)  #Gpc
+
+   
+
+    
+
 
     plt.figure()
 
@@ -218,22 +243,13 @@ def plot_luminosity_distance(filename):
         label="Fiducial model",
         color="red")
     
-    ## best fit
-    # We can also calculate the best fit model's d_L(z) using the background data, since we have the best fit parameters from the MCMC.
-    # We can identify the best fit model's d_L(z) from the background data by finding the index where the background parameters are closest to the best fit parameters from the MCMC.
+    plt.plot(
+        z_model_bestfit,
+        dL_model_Gpc_bestfit/z_model_bestfit,
+        label="Best fit",
+        color="green")
     
-
-    # dL_best_fit_SI = cosmo_data[best_fit_index,11]  # in m
-    # dL_best_fit_Gpc = dL_best_fit_SI / (1e9*sp.constants.parsec)  # in Gpc
-
-    # plt.plot(
-    #     z_model,
-    #     dL_best_fit_Gpc/z_model,
-    #     label="Best fit model from MCMC",
-    #     color="green",
-    #     linestyle='solid'
-    # )
-
+  
     plt.xlabel(r"$z$")
     plt.ylabel(r"$d_L(z)/z$ [Gpc]")
     plt.legend()
@@ -691,6 +707,7 @@ if __name__ == "__main__":
     # calculate_x_radiation_matter_equality()
     # calculate_x_matter_dark_energy_equality()
     # caluclate_x_onset_of_acceleration()
+    # load_best_fit_parameters()
 
     # plot_eta_of_x("cosmology.txt") 
     # plot_t_of_x("cosmology.txt")
@@ -700,7 +717,7 @@ if __name__ == "__main__":
     # plot_etaHp_over_c("cosmology.txt") 
     # plot_Hp()  
     # plot_densities()
-    plot_mcmc_scatterplot()
+    # plot_mcmc_scatterplot()
     # plot_mcmc_Omega_Lambda_posterior()
     # plot_mcmc_H0()
 

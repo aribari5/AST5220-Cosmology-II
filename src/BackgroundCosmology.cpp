@@ -289,14 +289,14 @@ double BackgroundCosmology::get_OmegaK(double x) const{
 }
 double BackgroundCosmology::get_OmegaM(double x) const{ 
   //=============================================================================
-  // The total matter density as a function of x = exp(a). (i saw this in the header but they were not in the cpp file so i added them here)
+  // The total matter density as a function of x = exp(a). 
   //=============================================================================
   
   return get_OmegaB(x) + get_OmegaCDM(x);
 }
  double BackgroundCosmology::get_OmegaRtot(double x) const{ 
   //=============================================================================
-  // The total radiation density as a function of x = exp(a). (i saw this in the header but they were not in the cpp file so i added them here)
+  // The total radiation density as a function of x = exp(a). 
   //=============================================================================
   
   return get_OmegaR(x) + get_OmegaNu(x);
@@ -304,7 +304,7 @@ double BackgroundCosmology::get_OmegaM(double x) const{
 
  double BackgroundCosmology::get_OmegaMnu(double x) const{ 
   //=============================================================================
-  // The total matter and neutrino density as a function of x = exp(a). (i saw this in the header but they were not in the cpp file so i added them here) (also idk what it is)
+  // The total matter and neutrino density as a function of x = exp(a). 
   //=============================================================================
   
   return get_OmegaM(x) + get_OmegaNu(x);

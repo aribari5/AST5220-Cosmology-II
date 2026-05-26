@@ -267,10 +267,10 @@ def plot_compare_to_Planck_data():
 ### calling the plots ###
 
 if __name__ == "__main__":
-    plot_style()
+    # plot_style()
     # plot_Cell()
     # plot_Theta_ells()
-    plot_integrand_Theta_ells() 
+    # plot_integrand_Theta_ells() 
     # plot_Cell_contributions()
     # plot_Pk()
     # plot_compare_to_Planck_data()

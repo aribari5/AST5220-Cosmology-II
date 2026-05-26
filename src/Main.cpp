@@ -20,6 +20,16 @@ int main(int argc, char **argv){
   double Neff        = 0.0;     //3.046;
   double TCMB        = 2.7255;
 
+  // Best fit parameters (From MCMC with background parameters)
+  double h_bestfit            = 0.702;
+  double Omega_M_bestfit      = 0.255;
+  double Omega_K_bestfit      = 0.079;
+  double Omega_Lambda_bestfit = 0.666;
+  double Omega_CDM_bestfit    = Omega_M_bestfit - OmegaB;
+
+
+
+
   // Recombination parameters
   double Yp          = 0.0;
 
@@ -36,13 +46,23 @@ int main(int argc, char **argv){
   BackgroundCosmology cosmo(h, OmegaB, OmegaCDM, OmegaK, Neff, TCMB);
   cosmo.solve();
   cosmo.info();
+
+  // For best fit parameters
+  BackgroundCosmology cosmo_bestfit(h_bestfit, OmegaB, Omega_CDM_bestfit, Omega_K_bestfit, Neff, TCMB); 
+  // cosmo_bestfit.solve();
+  // cosmo_bestfit.info(); 
+
   
   // // Output background evolution quantities
+
   // cosmo.output("cosmology.txt");
+  // cosmo_bestfit.output("cosmology_bestfit.txt");
+
 
   // // Do the supernova fits. Uncomment when you are ready to run this
   // // Make sure you read the comments on the top of src/SupernovaFitting.h
   // // mcmc_fit_to_supernova_data("data/supernovadata.txt", "results_supernovafitting.txt");  // Done:)
+  
 
   // // Remove when module is completed
   // return 0;

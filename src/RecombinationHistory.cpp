@@ -70,13 +70,6 @@ void RecombinationHistory::solve_number_density_electrons(){
     ne_arr[i] = ne_current;
     ne_saha_arr[i] = ne_current;
 
-    // Debugging test
-    // std::cout << "---------------------------------\n";
-    // std::cout << "x: " << x_array[i] << " Xe_saha: " << Xe_current << " ne_saha: " << ne_current << "\n";
-    // isnan(Xe_current) ? std::cout << "Its NaN" << "\n"
-    //          : std::cout << "Its a real number" << "\n";
-    // isnan(ne_current) ? std::cout << "Its NaN" << "\n"
-    //          : std::cout << "Its a real number" << "\n";
 
     // Are we still in the Saha regime?
     if(Xe_current < Xe_saha_limit)
@@ -253,7 +246,7 @@ int RecombinationHistory::rhs_peebles_ode(double x, const double *Xe, double *dX
   const double alpha        = 1/137.0359992;
   const double phi2_of_Tb   = 0.448*log(epsilon_0/((k_b*T_b)));
 
-  // const double alpha2_of_Tb = (64*Constants.pi)/(sqrt(27*Constants.pi)) * pow(alpha/m_e,2) * sqrt(epsilon_0/(k_b*T_b)) * phi2_of_Tb;
+  
   const double alpha2_of_Tb = 8.0/sqrt(3.0*Constants.pi)*Constants.c*Constants.sigma_T*sqrt(epsilon_0/(k_b*T_b))*phi2_of_Tb;
   const double beta_of_Tb   = alpha2_of_Tb*pow(m_e*k_b*T_b/(2*Constants.pi*hbar*hbar),1.5)*exp(-epsilon_0/(k_b*T_b));
   const double beta2_of_Tb  = alpha2_of_Tb*pow(m_e*k_b*T_b/(2*Constants.pi*hbar*hbar),1.5)*exp(-(epsilon_0)/(4*(k_b*T_b)));

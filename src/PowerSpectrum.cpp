@@ -71,7 +71,7 @@ void PowerSpectrum::generate_bessel_function_splines(){
 
   double z_max    = k_max * cosmo->eta_of_x(0.0);                          // as mentioned^
 
-  const double delta_z = M_PI / 8.0;                  // idk where this came from tbh i cant remember implementing it lol
+  const double delta_z = M_PI / 8.0;                  
   const int n_z        = int(z_max / delta_z);
 
   Vector z_array  = Utils::linspace(0.0,z_max, n_z);
@@ -173,7 +173,7 @@ void PowerSpectrum::line_of_sight_integration(){
   const int N       = 10;
   const double dk   = 2.0*M_PI/(eta0*N);
   const int n_k_i   = int((k_max - k_min) / dk);
-  const int n_x     = 3000;                                                   // unsure of this val
+  const int n_x     = 3000;                                                 
   Vector k_array = Utils::linspace(k_min, k_max, n_k_i);
   Vector x_array = Utils::linspace(Constants.x_start, Constants.x_end, n_x);
 

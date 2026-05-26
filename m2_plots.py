@@ -169,7 +169,7 @@ def plot_visibility_functions():
 ### calling the plots ###
 
 if __name__ == "__main__":
-    plot_style()
-    plot_optical_depth_taus()
-    plot_Xe()
-    plot_visibility_functions()
+    # plot_style()
+    # plot_optical_depth_taus()
+    # plot_Xe()
+    # plot_visibility_functions()
